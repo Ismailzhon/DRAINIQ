@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#071b2b" />
+  <meta name="description" content="DRAINIQ — система мониторинга уровня воды и раннего предупреждения о затоплениях. Интерактивная модель ливневой канализации и прототип на ESP32." />
+  <title>DRAINIQ — Уровень воды под контролем</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;450;500;550;600;650;700;750&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg:#080e14; --bg2:#0d161d; --card:#131e26; --card-line:rgba(222,255,247,.1); --white:#f1f5f1; --muted:#9eaeab; --mint:#bbff78; --mint-soft:#c6f5a6; --aqua:#6fe6d2; --lav:#b7b3ff; --danger:#ff927d; --warning:#f5cd79; --serif:'Playfair Display', Georgia, serif; --sans:'DM Sans', Inter, system-ui, sans-serif; --mono:'DM Mono',monospace; }
+    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0; background:var(--bg); color:var(--white); font-family:var(--sans); -webkit-font-smoothing:antialiased} button,input{font:inherit} button{cursor:pointer} a{text-decoration:none;color:inherit} button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--aqua);outline-offset:4px} ::selection{background:#a9ff6a;color:#071015}
+    .site-wrap{overflow:hidden;position:relative} .container{width:min(1320px,calc(100% - 72px));margin:auto} .mono{font-family:var(--mono);letter-spacing:.045em} .accent{color:var(--mint)}
+    .orb{position:absolute;pointer-events:none;border-radius:50%;filter:blur(80px);z-index:0} .top-glow{position:absolute;top:60px;left:50%;transform:translateX(-50%);height:1000px;width:min(1400px,120vw);background:radial-gradient(ellipse at 50% 61%,rgba(125,217,93,.28) 0%,rgba(47,158,123,.15) 28%,rgba(54,80,130,.10) 52%,transparent 75%);pointer-events:none;z-index:0} .starfield{position:absolute;inset:0 0 auto;height:1000px;pointer-events:none;opacity:.35;background-image:radial-gradient(circle at center,rgba(176,219,204,.65) .65px,transparent 1.1px);background-size:26px 26px;mask-image:linear-gradient(to bottom,transparent 2%,black 16%,black 72%,transparent 98%)}
+    .header{position:relative;z-index:20;height:94px;display:flex;align-items:center;justify-content:space-between;gap:28px} .brand{display:flex;align-items:center;gap:12px;min-width:max-content}.brand-mark{width:34px;height:34px;border:1.5px solid var(--mint);border-radius:11px;display:grid;place-items:center;box-shadow:0 0 25px rgba(187,255,120,.14);background:#baff7720}.brand-mark svg{width:22px;height:22px}.brand-name{font-weight:750;letter-spacing:-.065em;font-size:25px}.brand-name span{color:var(--mint)} .nav{display:flex;align-items:center;gap:36px;padding:11px 22px;border:1px solid rgba(226,248,236,.085);border-radius:40px;background:rgba(15,25,28,.38);backdrop-filter:blur(16px)}.nav a{color:#b9c6c2;font-weight:550;font-size:12px;transition:.2s}.nav a:hover{color:var(--white)}.nav a.active{color:var(--white)}.nav a.active:before{content:'•';color:var(--mint);margin-right:8px}.header-actions{display:flex;align-items:center;gap:10px}.status-pill{font:10px var(--mono);letter-spacing:.035em;display:flex;align-items:center;gap:9px;padding:12px 15px;background:#101a1e;border:1px solid rgba(192,243,208,.13);border-radius:32px;color:#bacbc6;white-space:nowrap}.status-dot{height:7px;width:7px;background:#e1bd6f;border-radius:50%;box-shadow:0 0 0 4px #e1bd6f12}.small-outline{padding:12px 17px;border-radius:32px;border:1px solid rgba(203,241,221,.3);color:var(--white);background:transparent;font-size:12px;font-weight:650;white-space:nowrap}.small-outline:hover{background:#ffffff15}.mobile-menu{display:none}
+    .hero{min-height:805px;position:relative;text-align:center;padding-top:84px} .eyebrow{display:inline-flex;gap:10px;align-items:center;padding:9px 15px;border:1px solid rgba(188,255,139,.2);border-radius:40px;background:rgba(156,231,109,.07);font:10px var(--mono);letter-spacing:.12em;color:#d0e6c4;text-transform:uppercase}.eyebrow .tiny-glow{height:6px;width:6px;background:var(--mint);border-radius:50%;box-shadow:0 0 12px var(--mint)}.hero h1{font-family:var(--serif);font-weight:400;letter-spacing:-.058em;line-height:1.15;font-size:clamp(66px,8.35vw,126px);max-width:1130px;margin:24px auto 24px;text-wrap:balance}.hero h1 em{color:var(--mint);font-weight:400;line-height:1.12;text-shadow:0 0 60px rgba(192,255,118,.24)}.hero-sub{font-size:16px;line-height:1.8;color:#bbc7c0;max-width:510px;margin:0 auto}.hero-buttons{margin-top:33px;display:flex;align-items:center;justify-content:center;gap:12px}.btn{display:inline-flex;justify-content:center;align-items:center;gap:11px;border:none;border-radius:40px;padding:15px 24px;font-size:13px;font-weight:750;transition:transform .2s,background .2s,box-shadow .2s}.btn:hover{transform:translateY(-2px)}.btn-primary{color:#0d1714;background:var(--mint);box-shadow:0 0 45px rgba(168,244,96,.22)}.btn-primary:hover{background:#ccff95;box-shadow:0 0 55px rgba(168,244,96,.34)}.btn-secondary{color:#e5efe8;background:#ffffff0c;border:1px solid #ffffff29}.btn-secondary:hover{background:#ffffff1a}.btn svg{width:16px;height:16px}.hero-side{position:absolute;top:266px;text-align:left;color:#eef4ed}.hero-side.left{left:0}.hero-side.right{right:0;text-align:right}.hero-side .number{font-family:var(--serif);font-size:48px;line-height:1.1;letter-spacing:-.06em}.hero-side .label{font:9px var(--mono);letter-spacing:.16em;color:#8a9a95;margin-top:8px}.hero-side .stat{margin-bottom:35px}.below-hint{font:10px var(--mono);letter-spacing:.16em;color:#7b9187;display:flex;gap:8px;align-items:center;justify-content:center;margin:32px auto 0}.below-hint span{width:24px;height:1px;background:#638778}
+    .showcase{margin-top:-128px;position:relative;z-index:5;height:400px;display:grid;grid-template-columns:1fr 1.08fr 1fr;align-items:end;gap:17px;perspective:1200px}.tilt-card{height:300px;border:1px solid rgba(218,252,227,.15);background:linear-gradient(135deg,rgba(31,50,47,.87),rgba(12,23,28,.94));border-radius:20px;box-shadow:0 28px 70px #0009,inset 0 1px 0 rgba(255,255,255,.05);backdrop-filter:blur(20px);padding:25px;position:relative;overflow:hidden}.tilt-card:after{content:'';position:absolute;inset:auto -70px -140px;height:240px;background:radial-gradient(ellipse,rgba(152,253,121,.12),transparent 70%);pointer-events:none}.showcase .first{transform:rotate(-4deg) translateY(9px);transform-origin:bottom right}.showcase .middle{height:354px;transform:translateY(4px);background:linear-gradient(145deg,#374d40 0%,#273f35 45%,#152b2d 100%);border-color:rgba(199,255,186,.28);box-shadow:0 0 90px #b7ff7420,0 32px 60px #0009}.showcase .last{transform:rotate(4deg) translateY(9px);transform-origin:bottom left}.card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#d5dfd5;font:11px var(--mono)}.card-top .mini-dot{display:inline-block;width:7px;height:7px;background:var(--mint);border-radius:50%;margin-right:9px;box-shadow:0 0 12px #baff76aa}.card-top .muted{color:#94a89d;font-size:10px}.site-row{margin-top:18px;display:flex;gap:12px;align-items:center;padding:11px 10px;border:1px solid #ffffff10;border-radius:11px;background:#ffffff07}.site-row .site-icon{display:grid;place-items:center;background:#ffffff11;border-radius:9px;width:31px;height:31px;color:#d7e7d9;font-size:13px}.site-row .site-name{font-size:11px;font-weight:650;color:#dae9da}.site-row .site-location{font-size:10px;color:#81988d;margin-top:4px}.site-row .site-level{margin-left:auto;font:11px var(--mono);color:#c5eea5}.mini-tag{border-radius:30px;border:1px solid #d6ff9e55;background:#ceffaf11;color:var(--mint);padding:6px 11px;font:9px var(--mono)}.gauge-area{display:flex;align-items:center;justify-content:space-between;margin:22px 0 12px;gap:10px}.gauge-value{font-family:var(--serif);font-size:78px;letter-spacing:-.07em;line-height:1.06}.gauge-value small{font:17px var(--sans);color:#bac9bb;letter-spacing:0;margin-left:6px}.gauge-ring{position:relative;width:116px;height:116px;flex:0 0 auto}.gauge-ring svg{transform:rotate(-90deg);width:100%;height:100%}.gauge-ring circle{fill:none;stroke-width:8}.gauge-ring .track{stroke:#d9ffd220}.gauge-ring .fill{stroke:var(--mint);stroke-linecap:round;stroke-dasharray:283;stroke-dashoffset:164;transition:stroke-dashoffset .7s}.gauge-ring .water-glyph{position:absolute;inset:0;display:grid;place-items:center;font-size:25px;color:var(--mint)}.microcopy{font-size:12px;line-height:1.5;color:#bccfc0}.card-footer{border-top:1px solid #e8ffe51c;padding-top:16px;margin-top:20px;display:flex;justify-content:space-between;align-items:center}.spark-chart{width:100%;height:125px;margin-top:10px}.forecast-value{font-family:var(--serif);font-size:58px;letter-spacing:-.07em;margin-top:24px}.forecast-value small{font:14px var(--sans);color:#a6b8ae;letter-spacing:0}.forecast-meta{color:#afc8ad;font-size:11px;margin-top:6px}
+    .section-head{text-align:center}.overline{font:10px var(--mono);letter-spacing:.19em;text-transform:uppercase;color:var(--mint)}.section-title{font:400 clamp(40px,5vw,72px)/1.2 var(--serif);letter-spacing:-.055em;margin:18px auto 14px;max-width:850px}.section-title em{color:var(--aqua)}.section-sub{max-width:540px;margin:0 auto;color:#93a7a0;font-size:14px;line-height:1.75}.features{position:relative;padding:160px 0 105px;background:linear-gradient(to bottom,#080e14,#0b141a)}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:52px}.feature{border:1px solid #ffffff17;border-radius:19px;padding:31px 30px 29px;min-height:278px;background:linear-gradient(160deg,rgba(23,39,42,.82),rgba(12,22,28,.82));transition:transform .2s,border-color .2s}.feature:hover{transform:translateY(-5px);border-color:#a9ff6c55}.feature .feature-icon{width:49px;height:49px;border-radius:14px;display:grid;place-items:center;background:#d4ff8814;color:var(--mint);border:1px solid #c7ff8a2a}.feature:nth-child(2) .feature-icon{background:#7fffe212;color:#74ead7;border-color:#73e5ce33}.feature:nth-child(3) .feature-icon{background:#b7b3ff16;color:#b7b3ff;border-color:#b7b3ff39}.feature .feature-icon svg{height:25px;width:25px}.feature .feature-num{color:#73857e;font:10px var(--mono);float:right}.feature h3{font-size:22px;letter-spacing:-.045em;margin:30px 0 10px}.feature p{color:#9aaba5;font-size:13px;line-height:1.75;margin:0}
+    .demo-section{padding:90px 0 120px;position:relative;background:radial-gradient(ellipse 70% 50% at 50% 40%,#1a353533,transparent 80%),#0b141a}.demo-head{display:flex;justify-content:space-between;align-items:end;gap:25px;margin-bottom:32px}.demo-head .section-title{margin:10px 0 5px;text-align:left}.demo-head .section-sub{text-align:left;margin:0}.demo-indicator{display:inline-flex;align-items:center;gap:9px;color:#b2cbbd;font:10px var(--mono);border:1px solid #badcd12a;background:#1d2c2a88;border-radius:24px;padding:11px 14px;white-space:nowrap}.demo-indicator .status-dot{background:var(--mint);box-shadow:0 0 0 4px #baff7a16}.dashboard{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr);gap:19px}.panel{border:1px solid #c9f3e21c;background:linear-gradient(145deg,#15252a,#101c24);border-radius:22px;overflow:hidden;box-shadow:0 18px 70px #0003}.panel-inner{padding:28px}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:16px}.panel-heading h3{font-size:13px;font-weight:700;margin:0}.panel-heading span{font:10px var(--mono);color:#8ca49a}.level-banner{display:flex;align-items:end;justify-content:space-between;gap:15px;margin:28px 0 25px}.level-big{font-family:var(--serif);font-size:93px;line-height:.92;letter-spacing:-.075em}.level-big small{font:26px var(--sans);color:#8ba49a;margin-left:8px;letter-spacing:-.04em}.level-status{border-radius:30px;padding:9px 12px;color:var(--mint);background:#a8ed9414;border:1px solid #a8ed9433;font:10px var(--mono)}.level-status.warning{color:var(--warning);background:#f5cd7915;border-color:#f5cd793a}.level-status.danger{color:var(--danger);background:#ff927d15;border-color:#ff927d44}.chart-wrap{position:relative;background:#07141a66;border:1px solid #ffffff0d;border-radius:15px;padding:14px 14px 8px}.chart-wrap svg{display:block;width:100%;height:210px;overflow:visible}.chart-axis{fill:#82968e;font-size:11px;font-family:var(--mono)}.chart-grid{stroke:#ceddd11a;stroke-dasharray:3 6;stroke-width:1}.chart-line{stroke:var(--aqua);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 8px #62f7d075)}.chart-area{fill:url(#chartGradient)}.chart-dot{fill:var(--aqua);stroke:#11272b;stroke-width:4}.threshold-line{stroke:#ffcb7b88;stroke-dasharray:5 5;stroke-width:1.5}.chart-legend{display:flex;gap:16px;align-items:center;margin-top:6px;color:#95a79f;font:10px var(--mono)}.chart-legend span:before{content:'';display:inline-block;height:7px;width:7px;border-radius:50%;background:var(--aqua);margin-right:7px}.chart-legend span:last-child:before{background:var(--warning)}.bottom-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0;padding-top:23px}.metric{padding:0 14px;border-left:1px solid #ffffff17}.metric:first-child{border-left:0;padding-left:0}.metric-label{color:#849a91;font:10px var(--mono);letter-spacing:.04em}.metric-val{font-weight:700;font-size:19px;margin-top:7px;letter-spacing:-.04em}.metric-val small{color:#8fa49a;font-size:11px;font-weight:500}
+    .sim-panel .panel-inner{padding:28px}.tank-zone{display:flex;align-items:center;gap:34px;justify-content:center;margin:22px 0 20px}.tank{position:relative;border:2px solid #82e7ce80;width:126px;height:185px;border-radius:10px 10px 15px 15px;background:linear-gradient(90deg,#9bffee07,#ffffff06,#9bffee07);box-shadow:inset 0 0 22px #57d4e508,0 0 24px #65eed30b;overflow:hidden}.water{position:absolute;left:0;right:0;bottom:0;height:42%;background:linear-gradient(0deg,#1f97ad90,#5decca9e);transition:height .6s cubic-bezier(.17,.67,.32,1);box-shadow:0 -6px 30px #6ae0db55}.water:before{content:'';position:absolute;top:-8px;left:-20%;width:140%;height:18px;background:#83e9d8a9;border-radius:50%;animation:wave 4s ease-in-out infinite}.tank .threshold-marker{position:absolute;top:20%;left:0;right:0;border-top:1.5px dashed var(--warning);z-index:2}.tank .threshold-caption{position:absolute;right:5px;top:calc(20% - 17px);font:9px var(--mono);color:var(--warning)}.tank-scale{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;height:185px;color:#91aa9e;font:10px var(--mono)}.sensor{position:absolute;z-index:3;top:-15px;left:calc(50% - 18px);width:36px;height:13px;border:2px solid #9bfbdd;border-radius:5px;background:#335850}.tank-holder{padding-top:15px;position:relative}.simulation-note{color:#829e93;font-size:11px;text-align:center;line-height:1.6;max-width:250px;margin:0 auto 26px}.slider-header{display:flex;justify-content:space-between;margin-bottom:12px;font-size:11px;font-weight:650}.slider-header span:last-child{font:11px var(--mono);color:var(--aqua)} input[type=range]{appearance:none;width:100%;height:5px;border-radius:5px;background:linear-gradient(to right,var(--aqua) 0%,var(--aqua) 42%,#34474b 42%);cursor:pointer;display:block;margin:16px 0 18px}input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#d8fff4;border:4px solid #48bea8;box-shadow:0 0 0 4px #4cbfa533}input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#d8fff4;border:4px solid #48bea8}.control-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}.control-btn{background:#ffffff0c;color:#dbece5;border:1px solid #ffffff1b;padding:13px;border-radius:12px;font-weight:700;font-size:12px}.control-btn:hover{background:#ffffff19}.control-btn.primary{color:#081411;background:var(--mint);border-color:var(--mint)}.control-btn.primary:hover{background:#cfff97}.auto-line{display:flex;justify-content:space-between;align-items:center;margin-top:21px;padding-top:17px;border-top:1px solid #ffffff15}.auto-line .left-label{font-size:11px;font-weight:650}.auto-line .left-label span{display:block;font-size:10px;font-weight:400;color:#8fa398;margin-top:5px}.switch{position:relative;width:39px;height:23px;display:inline-block}.switch input{opacity:0;width:0;height:0}.switch-ui{position:absolute;inset:0;background:#3b4b4b;border-radius:30px;transition:.2s}.switch-ui:before{content:'';position:absolute;height:17px;width:17px;left:3px;top:3px;border-radius:50%;background:#e2f0e8;transition:.2s}.switch input:checked + .switch-ui{background:#71d9a1}.switch input:checked + .switch-ui:before{transform:translateX(16px);background:#10271d}.notification{margin-top:16px;border-radius:14px;padding:15px 18px;background:#baff7810;border:1px solid #baff7833;display:flex;gap:11px;align-items:start;color:#c4ddb7}.notification.warn{background:#f6c96c10;border-color:#f6c96c40;color:#f5d5a1}.notification.danger{background:#ff927d12;border-color:#ff927d45;color:#ffc0ae}.notification b{font-size:12px;display:block;margin:0 0 3px}.notification p{font-size:11px;line-height:1.5;opacity:.8;margin:0}.notification svg{height:19px;width:19px;flex:0 0 auto}
+    .process{padding:120px 0 125px;background:#091117;position:relative}.process-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:60px}.process-step{position:relative;padding:26px;border:1px solid #e5fff01c;background:#ffffff05;border-radius:18px}.process-step:after{content:'→';position:absolute;right:-17px;top:calc(50% - 13px);font-size:22px;color:var(--mint);z-index:2}.process-step:last-child:after{display:none}.step-index{font:10px var(--mono);color:var(--mint)}.step-icon{height:48px;margin-top:32px;color:#d0fee2;display:flex;align-items:center}.step-icon svg{width:32px;height:32px}.process-step h3{margin:8px 0 8px;font-size:16px}.process-step p{margin:0;color:#829b90;font-size:12px;line-height:1.7}.purpose{padding:95px 0 110px;text-align:center;position:relative;background:radial-gradient(ellipse at 50% 120%,#78ea7d20,transparent 60%),#0b1517}.purpose .section-title{max-width:950px}.purpose .btn{margin-top:27px}.footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #ffffff1b;padding:26px 0 31px;color:#8b9c92;font-size:11px}.footer strong{color:#d4e5d9}.footer .footer-right{display:flex;gap:20px}
+    .toast{position:fixed;z-index:120;bottom:28px;left:50%;transform:translate(-50%,120px);opacity:0;pointer-events:none;background:#1f3432;border:1px solid #b5ff9466;border-radius:14px;padding:14px 19px;font-size:12px;box-shadow:0 12px 50px #0007;max-width:calc(100vw - 24px);transition:.3s}.toast.active{transform:translate(-50%,0);opacity:1}.menu-layer{display:none}
+    @keyframes wave{0%,100%{transform:translateX(-5%) rotate(-2deg)}50%{transform:translateX(4%) rotate(2deg)}}
+    @media(max-width:1150px){.hero-side{display:none}.hero{min-height:755px}.showcase{margin-top:-95px}.tilt-card{padding:20px}.showcase .middle{height:330px}.gauge-value{font-size:64px}.gauge-ring{width:95px;height:95px}.site-row{gap:7px}.container{width:min(1320px,calc(100% - 50px))}.nav{gap:22px}}
+    @media(max-width:880px){.header{height:78px}.nav,.header-actions .status-pill,.header-actions .small-outline{display:none}.mobile-menu{display:grid;place-items:center;border:1px solid #ffffff30;border-radius:11px;background:transparent;color:white;width:39px;height:39px;font-size:20px}.menu-layer.active{display:flex;position:fixed;z-index:19;inset:67px 0 auto;flex-direction:column;gap:20px;padding:30px;background:#0c171a;border-bottom:1px solid #8adbbd55}.menu-layer a{font-size:17px;font-weight:650}.hero{min-height:650px;padding-top:70px}.hero h1{font-size:clamp(60px,10vw,92px)}.showcase{height:auto;margin-top:-60px;grid-template-columns:1fr 1fr;padding-bottom:20px;gap:14px}.showcase .middle{grid-column:1 / -1;grid-row:1;height:280px;transform:none}.showcase .first,.showcase .last{transform:none;height:266px}.gauge-area{justify-content:flex-start;gap:40px}.features{padding-top:100px}.feature-grid{gap:12px}.feature{padding:24px 22px;min-height:305px}.dashboard{grid-template-columns:1fr}.sim-panel .panel-inner{max-width:none}.tank-zone{justify-content:center}.process-grid{grid-template-columns:repeat(2,1fr)}.process-step:nth-child(2):after{display:none}}
+    @media(max-width:590px){.container{width:calc(100% - 36px)}.hero{min-height:600px;padding-top:72px}.hero h1{font-size:clamp(50px,14vw,76px);line-height:1.16;margin-top:25px;letter-spacing:-.055em}.hero-sub{font-size:13px;line-height:1.8;max-width:330px}.eyebrow{font-size:8px;letter-spacing:.08em}.hero-buttons{flex-wrap:wrap}.btn{padding:13px 18px;font-size:12px}.showcase{margin-top:-50px;gap:12px;grid-template-columns:1fr}.showcase .middle{grid-row:1;grid-column:1;height:300px}.showcase .first,.showcase .last{height:250px}.showcase .last{display:none}.showcase .first{grid-row:2}.gauge-value{font-size:74px}.features{padding:88px 0 70px}.feature-grid{grid-template-columns:1fr;gap:12px;margin-top:35px}.feature{min-height:auto;padding:25px}.feature h3{margin-top:20px}.section-title{font-size:45px}.section-sub{font-size:12px}.demo-section{padding:70px 0 85px}.demo-head{align-items:start;flex-direction:column}.demo-head .section-title{font-size:44px}.panel-inner,.sim-panel .panel-inner{padding:20px}.level-big{font-size:76px}.level-status{font-size:9px;padding:8px}.bottom-metrics{gap:0}.metric{padding:0 8px}.metric-label{font-size:8px}.metric-val{font-size:16px}.chart-wrap svg{height:185px}.process{padding:80px 0}.process-grid{grid-template-columns:1fr;gap:13px;margin-top:36px}.process-step:after{display:none}.process-step{padding:22px}.step-icon{margin-top:15px}.purpose{padding:80px 0}.footer{flex-direction:column;gap:13px}.footer .footer-right{flex-wrap:wrap}.top-glow{top:15px;height:850px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  /* CITY DRAINAGE SIMULATOR */
+.storm-section{position:relative;padding:112px 0 116px;background:radial-gradient(ellipse 72% 40% at 50% 46%,rgba(51,160,174,.10),transparent 100%),#091119;border-top:1px solid #b9fff40e}
+.storm-heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:32px}.storm-heading .section-title{margin-bottom:12px}.storm-heading p{max-width:540px}.simulation-label{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;background:#bbff7712;border:1px solid #bbff773c;color:#daefbd;border-radius:40px;font:10px var(--mono);letter-spacing:.04em;white-space:nowrap}.simulation-label i{width:7px;height:7px;border-radius:50%;background:#baff78;box-shadow:0 0 10px #baff78;display:block}
+.storm-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(310px,.69fr);gap:20px;align-items:stretch}
+.storm-scene-card{border:1px solid #bcdde525;border-radius:24px;overflow:hidden;background:linear-gradient(145deg,#142932,#0c1824);box-shadow:0 25px 100px #0006;position:relative}
+.storm-card-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:20px 24px 18px;border-bottom:1px solid #b6e4e814}.storm-card-top strong{font-size:14px;letter-spacing:-.01em}.storm-card-top .mono{font-size:10px;color:#8db7bb}.scene-live{font:9px var(--mono);color:#baffe0;display:flex;align-items:center;gap:9px}.scene-live:before{content:"";height:6px;width:6px;border-radius:100%;background:#6fe6d2;box-shadow:0 0 10px #6fe6d2}
+.city-stage{position:relative;aspect-ratio:1.90;background:radial-gradient(ellipse at 40% 40%,#163d4c,#0d1b29 70%);overflow:hidden}.city-stage svg{width:100%;height:100%;display:block}.stage-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,transparent 77%,rgba(6,17,28,.4))}.rain-drop{stroke:#8edafa;stroke-width:2.3;stroke-linecap:round;opacity:.7;animation:stormrain 1.1s linear infinite;transform-box:fill-box}.city-stage.paused .rain-drop,.city-stage.paused .water-line,.city-stage.paused .sonar-ring,.city-stage.paused .sparkle{animation-play-state:paused}.water-line{animation:stormflow 1.3s linear infinite}.sonar-ring{transform-origin:497px 349px;animation:sonarpulse 2s infinite}.sparkle{animation:blink 2s infinite}.scene-hud{position:absolute;top:16px;left:16px;display:flex;gap:9px;flex-wrap:wrap;z-index:2}.hud-chip{border:1px solid #caf5f733;background:#071923c9;backdrop-filter:blur(10px);padding:9px 12px;border-radius:11px;font:10px var(--mono);color:#bfd4d8}.hud-chip b{color:#f4fff5;font-size:12px}.hud-chip.alert{color:#ffb8a8;border-color:#ff9c7d6b}.scene-caption{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 24px;color:#98b7bc;font:10px var(--mono);border-top:1px solid #ffffff10}.scene-caption strong{color:#c5ff8b}.mini-legend{display:flex;flex-wrap:wrap;gap:16px}.mini-legend span{display:flex;align-items:center;gap:6px}.legend-mark{width:8px;height:8px;border-radius:50%;display:inline-block;background:#4dcdf5}.legend-mark.purple{background:#c5ff88}.legend-mark.orange{background:#ffb06f}
+.storm-controls{border:1px solid #c3f9eb25;border-radius:24px;background:linear-gradient(155deg,#16292f,#0d1b25);padding:25px;display:flex;flex-direction:column;gap:22px;box-shadow:0 24px 90px #0003}.sc-control-title{display:flex;justify-content:space-between;align-items:center;gap:12px}.sc-control-title h3{margin:0;font-size:17px}.sc-control-title span{font:9px var(--mono);color:#95b2b8}.sc-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}.sc-row span{font-size:12px;color:#d1e4df}.sc-row strong{font:13px var(--mono);color:#c8ffa1}.sc-slider{width:100%;accent-color:#baff78;cursor:pointer;appearance:none;-webkit-appearance:none;background:#32494a;height:5px;border-radius:20px;display:block}.sc-slider::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:#caff8f;border:4px solid #1a302d;box-shadow:0 0 0 1px #baff78,0 0 16px #baff7855}.sc-slider::-moz-range-thumb{width:13px;height:13px;background:#caff8f;border:4px solid #1a302d;border-radius:50%}.sc-hint{font-size:11px;line-height:1.6;color:#7fa1a5;margin-top:9px}.sc-quick{display:flex;gap:8px;flex-wrap:wrap}.sc-button{flex:1;min-width:90px;border:1px solid #b5d4ce37;border-radius:11px;padding:12px 10px;background:#ffffff08;color:#e5f8f1;font-weight:700;font-size:11px;transition:.2s}.sc-button:hover{background:#baff7819;border-color:#baff786b}.sc-button.cta{background:#baff78;color:#142018;border:1px solid #baff78}.sc-button.cta:hover{background:#d5ffaa}.sc-divider{height:1px;background:#c3ebe819}.sc-status{border:1px solid #baff7838;background:#9cff7710;border-radius:13px;padding:15px;display:flex;align-items:center;gap:11px}.sc-status.warning{border-color:#f9cf794f;background:#f6c36d12}.sc-status.critical{border-color:#ff876b75;background:#ff876b14}.sc-status .sc-circle{width:10px;height:10px;flex:0 0 auto;background:#baff78;border-radius:50%;box-shadow:0 0 18px #baff78}.sc-status.warning .sc-circle{background:#f9c66d;box-shadow:0 0 16px #f9c66d}.sc-status.critical .sc-circle{background:#ff897a;box-shadow:0 0 16px #ff897a}.sc-status b{font-size:12px}.sc-status p{font-size:10px;line-height:1.6;color:#9bb4ad;margin:4px 0 0}.sc-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.sc-stat{border:1px solid #ffffff10;background:#ffffff06;border-radius:13px;padding:13px 12px}.sc-stat label{display:block;color:#8ea9ab;font:9px var(--mono);line-height:1.4;margin-bottom:7px}.sc-stat strong{font:21px var(--serif);color:#f3fff3}.sc-stat small{font-size:10px;color:#90afb1}.sc-disclaimer{font:10px var(--mono);color:#739395;line-height:1.7}
+.storm-footnote{display:flex;gap:14px;align-items:flex-start;border:1px solid #baff7828;background:#baff780a;border-radius:15px;margin-top:20px;padding:18px 21px}.storm-footnote .icon-light{font-size:20px}.storm-footnote p{font-size:12px;color:#9bb8b5;line-height:1.75;margin:0}.storm-footnote strong{color:#ecfff0}
+.explainer{background:#0b151c;padding:105px 0 115px;border-top:1px solid #ffffff0e}.explain-head{max-width:850px;margin-bottom:40px}.explain-head p{line-height:1.85}.explain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.explain-card{border:1px solid #b8f6e21b;background:#ffffff05;border-radius:18px;padding:27px;min-height:225px}.explain-num{font:11px var(--mono);color:#baff78;letter-spacing:.14em}.explain-card h3{font-size:19px;margin:26px 0 10px}.explain-card p{font-size:13px;line-height:1.8;color:#90aaa7;margin:0}.explain-bottom{margin-top:24px;border:1px solid #a6eac72a;border-radius:18px;padding:27px;display:grid;grid-template-columns:1fr 1fr;gap:25px;background:linear-gradient(120deg,#1a332f,#102329)}.explain-bottom strong{font-size:15px;color:#e9f8e8}.explain-bottom p{font-size:12px;line-height:1.75;color:#a1bcb4;margin:10px 0 0}
+@keyframes stormrain{0%{transform:translateY(-35px)}100%{transform:translateY(360px)}}@keyframes stormflow{to{stroke-dashoffset:-80}}@keyframes sonarpulse{0%{opacity:.75;transform:scale(.7)}100%{opacity:0;transform:scale(1.5)}}@keyframes blink{50%{opacity:.25}}
+@media(max-width:1000px){.storm-grid{grid-template-columns:1fr}.storm-controls{display:grid;grid-template-columns:1fr 1fr;align-items:start}.sc-divider{display:none}.sc-control-title,.sc-quick,.sc-stats,.sc-status,.sc-disclaimer{grid-column:1/-1}.storm-heading{align-items:start;flex-direction:column}.explain-grid{grid-template-columns:1fr 1fr}.explain-bottom{grid-template-columns:1fr}}
+@media(max-width:650px){.storm-section{padding:75px 0}.storm-grid{gap:13px}.storm-controls{display:flex;padding:20px;gap:20px}.city-stage{aspect-ratio:1.23}.city-stage svg{width:100%;height:100%;object-fit:cover;object-position:center}.storm-card-top{padding:17px}.scene-caption{padding:14px 17px;align-items:start;flex-direction:column}.scene-hud{top:10px;left:10px}.hud-chip{font-size:8px;padding:7px 9px}.simulation-label{white-space:normal}.explain-grid{grid-template-columns:1fr}.explain-card{min-height:0}.explain-bottom{padding:20px}.explainer{padding:75px 0}.sc-stat strong{font-size:25px}}
+
+  .scene-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;padding:24px 22px;align-items:center;min-height:149px;border-top:1px solid #ffffff12;background:linear-gradient(120deg,#101f29,#10232a)}.scene-step{padding:15px 12px;border-radius:13px;border:1px solid #c7e6e314;background:#ffffff05;min-height:95px}.scene-step span{font:9px var(--mono);color:#baff78;display:block}.scene-step strong{display:block;font-size:11px;margin:11px 0 5px;color:#e6f6f1}.scene-step small{font-size:10px;line-height:1.5;color:#86aaa9;display:block}@media(max-width:650px){.scene-steps{grid-template-columns:1fr;gap:7px;padding:14px;min-height:0}.scene-step{padding:11px 13px;min-height:0}.scene-step strong{margin:6px 0 3px}}
+
+    .nav{gap:24px}.nav a{font-size:11.5px}.section-title{hyphens:auto}.hero h1{font-size:clamp(54px,7vw,112px)}
+    .storm-card-top,.sc-row,.panel-heading{gap:8px}.sc-stat label{overflow-wrap:anywhere}.scene-live{white-space:nowrap}
+    @media(max-width:1200px){.nav{gap:14px;padding:11px 14px}.status-pill{display:none}}
+    @media(max-width:720px){.hero h1{font-size:clamp(48px,11vw,72px)}.section-title{font-size:clamp(34px,8vw,52px)}}
+
+
+    /* DRAINIQ LIVE: browser USB connection to ESP32; no network relay. */
+    .live-panel{margin:0 0 23px;padding:27px;border:1px solid rgba(111,230,210,.28);border-radius:22px;background:linear-gradient(125deg,#15262a 0%,#101f2b 56%,#0b171d 100%);box-shadow:0 12px 50px rgba(0,0,0,.2)}
+    .live-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}.live-eyebrow{font:11px var(--mono);letter-spacing:.15em;color:var(--aqua);text-transform:uppercase}.live-title{font:700 clamp(23px,3vw,34px) var(--sans);letter-spacing:-.045em;margin:8px 0 8px;color:var(--white)}.live-desc{font-size:13px;line-height:1.7;color:#a7bbb5;max-width:710px;margin:0}
+    .live-pill{border-radius:100px;padding:9px 14px;background:#fff1;border:1px solid #b9e1d12b;color:#b6cbc4;white-space:nowrap;font:11px var(--mono);letter-spacing:.03em;display:inline-flex;align-items:center;gap:8px}.live-dot{width:7px;height:7px;border-radius:100%;background:#71837f;display:inline-block}.live-pill.connected .live-dot{background:var(--mint);box-shadow:0 0 12px #bbff78bb}.live-pill.connected{color:var(--mint);border-color:#bbff7855}
+    .live-body{display:grid;grid-template-columns:minmax(250px,.85fr) minmax(0,1.15fr);gap:25px;margin-top:23px}
+    .live-block{border-radius:16px;border:1px solid #ffffff13;background:#09161b84;padding:20px;min-width:0}.live-label{font:10px var(--mono);color:#88a5a0;letter-spacing:.09em;text-transform:uppercase}.live-distance{font-family:var(--serif);font-size:clamp(54px,5.9vw,80px);line-height:1.12;letter-spacing:-.06em;color:#f1f7f3;font-variant-numeric:tabular-nums;white-space:nowrap}.live-distance small{font:16px var(--sans);color:#a4b9b0;letter-spacing:0;margin-left:7px}.live-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}.live-metric{border-radius:12px;padding:13px;background:#ffffff08}.live-metric strong{display:block;margin-top:6px;font-size:20px;font-variant-numeric:tabular-nums}.live-chart{display:block;width:100%;height:auto;min-height:145px;margin:8px 0}.live-chart-grid{stroke:#ffffff17;stroke-width:1;stroke-dasharray:3 6}.live-chart-line{fill:none;stroke:var(--aqua);stroke-width:3;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 0 4px #6fe6d240)}.live-hint{font-size:11px;line-height:1.6;color:#98ada8;margin:0}.live-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.live-btn{border-radius:999px;border:1px solid #9cf1dd60;background:#c0ff88;color:#0c2522;padding:12px 18px;font-size:13px;font-weight:750}.live-btn:hover{filter:brightness(1.08)}.live-btn.ghost{background:transparent;color:#c8e2db;border-color:#7daba261}.live-btn:disabled{cursor:not-allowed;opacity:.45}.live-calibration{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:15px}.live-calibration label{font-size:12px;color:#bbcdc7}.live-calibration input{width:100px;border:1px solid #7bada470;border-radius:9px;background:#09171d;color:#e6f4ec;padding:9px;font-size:13px}.live-calibration input::placeholder{color:#6b817c}.live-alert{font-size:12px;color:#a3c9bb;line-height:1.6;margin-top:13px;min-height:20px}.live-alert.warning{color:var(--warning)}.live-alert.danger{color:var(--danger)}.live-alert.success{color:var(--mint)}
+
+    /* DRAINIQ LIVE 2.1 — measurement reliability, risk, history, AI anomaly detection */
+    .live-telemetry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin-top:12px}
+    .live-stat{border:1px solid #ffffff0e;border-radius:12px;padding:13px;background:linear-gradient(145deg,#15282f,#101e28);min-width:0}
+    .live-stat strong{display:block;margin-top:7px;font-size:19px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+    .live-stat small{display:block;margin-top:6px;font-size:10px;line-height:1.45;color:#91aaa5}
+    .live-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+    .live-risk-tag{border:1px solid #ffffff20;border-radius:40px;padding:7px 10px;font:10px var(--mono);white-space:nowrap}
+    .live-risk-tag.good{color:var(--mint);border-color:#baff7640;background:#baff760c}
+    .live-risk-tag.mid{color:var(--warning);border-color:#f5cd7940;background:#f5cd790c}
+    .live-risk-tag.high{color:var(--danger);border-color:#ff927d40;background:#ff927d0c}
+    .live-meter{height:8px;border-radius:20px;background:#ffffff13;overflow:hidden;margin-top:11px}
+    .live-meter div{height:100%;width:0%;background:var(--aqua);border-radius:20px;transition:width .3s,background .3s}
+    .live-chart-meta{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:8px 0 4px}
+    .live-inline-select{background:#0b1c24;border:1px solid #a3c9c955;color:#e6f4ec;border-radius:9px;padding:8px 10px;max-width:100%;font:11px var(--mono)}
+    .live-chart-ticks{display:flex;justify-content:space-between;font:10px var(--mono);color:#8ca39e;margin-top:-4px;gap:8px}
+    .live-history{border:1px solid #ffffff14;background:#0b181f7a;border-radius:16px;padding:19px;margin-top:19px}
+    .live-history-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+    .live-history-head h4{font-size:15px;margin:3px 0;color:#eff8f2}
+    .live-history .live-actions{margin-top:0}
+    .live-table-wrap{margin-top:14px;overflow-x:auto;border-radius:12px;border:1px solid #ffffff12}
+    .live-table{width:100%;border-collapse:collapse;font-size:12px;min-width:520px;font-variant-numeric:tabular-nums}
+    .live-table th{font:10px var(--mono);letter-spacing:.06em;text-align:left;color:#98ada7;background:#ffffff07;padding:12px 13px;white-space:nowrap}
+    .live-table td{padding:11px 13px;border-top:1px solid #ffffff10;color:#d4e6de;white-space:nowrap}
+    .live-table tbody tr:hover{background:#ffffff05}
+    .live-table .empty-data{text-align:center;color:#839b96;padding:20px}
+    .live-extra-note{font-size:11px;line-height:1.6;color:#96aca7;margin-top:13px}
+    .live-updated{font:11px var(--mono);color:#99b6b0;line-height:1.5}
+    .live-count{font:11px var(--mono);color:var(--aqua)}
+    @media(max-width:650px){.live-stat strong{font-size:16px}.live-history{padding:13px}.live-history-head .live-btn{padding:9px 12px;font-size:11px}}
+
+    @media(max-width:850px){.live-body{grid-template-columns:1fr}.live-panel{padding:19px}.live-chart{height:165px}}
+
+
+    /* DRAINIQ AI v0.1 — experimental anomaly-detection preview */
+    .ai-panel{margin:18px 0 0;border:1px solid #5fe8d653;background:linear-gradient(135deg,#102d32,#0b171f 66%);border-radius:17px;padding:23px}
+    .ai-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .ai-kicker{font:11px var(--mono);letter-spacing:.09em;color:#77efcf}
+    .ai-title{color:#f3fff7;font-size:21px;margin:8px 0 6px}
+    .ai-desc,.ai-small{color:#a9c7bb;font-size:12px;line-height:1.65;margin:0}
+    .ai-flag{padding:8px 13px;border:1px solid #86a79c77;border-radius:22px;color:#cce1da;font-weight:750;font-size:12px}
+    .ai-flag.warn{color:#ffdc7c;border-color:#f8c668;background:#d69b2333}
+    .ai-flag.good{color:#7df1b1;border-color:#7df1b188;background:#2b956333}
+    .ai-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}
+    .ai-metric{border:1px solid #ffffff18;border-radius:12px;background:#ffffff08;padding:13px}
+    .ai-metric label{display:block;color:#b2cec2;font-size:11px}
+    .ai-metric strong{display:block;margin-top:7px;color:#eff8f2;font-size:20px;font-variant-numeric:tabular-nums}
+    @media(max-width:600px){.ai-metrics{grid-template-columns:1fr}.ai-panel{padding:15px}}
+
+  </style>
+
+<style id="dq-cloud-style">
+.cloud-panel {background:linear-gradient(145deg,#0d2533,#102a3e 64%,#09282f);border:1px solid rgba(82,224,213,.33);border-radius:25px;margin:35px auto 28px;padding:clamp(19px,3.5vw,34px);color:#e8f6f7;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.cloud-panel *{box-sizing:border-box}.cloud-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}.cloud-tag{font-size:11px;color:#7cf6db;font-weight:800;letter-spacing:.13em}.cloud-panel h3{color:#f3ffff;font-size:clamp(23px,3vw,35px);margin:8px 0}.cloud-intro{font-size:14px;color:#a6c3cd;line-height:1.65;margin:0 0 22px;max-width:850px}.cloud-indicator{border:1px solid #48616f;border-radius:100px;padding:7px 12px;font-size:12px;letter-spacing:.02em;color:#ccdfe3;background:#21394b}.cloud-indicator.online{background:#14423c;border-color:#326e62;color:#78f7bf}.cloud-indicator.stale{background:#514129;border-color:#89612d;color:#ffdb8c}.cloud-form{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin:12px 0 25px}.cloud-form label{font-size:13px;color:#d5f1f0;font-weight:700}.cloud-form input{background:#091d29;border:1px solid #456476;border-radius:10px;color:#fff;padding:11px 12px;max-width:230px;font-size:15px}.cloud-form button{background:#51ded0;color:#062c33;border:0;padding:12px 18px;border-radius:10px;font-weight:800;cursor:pointer}.cloud-form button.secondary{border:1px solid #426875;color:#d7f6f4;background:transparent}.cloud-form button:focus-visible,.cloud-form input:focus-visible{outline:2px solid #affce8;outline-offset:2px}.cloud-statusline{font-size:12px;color:#b0d4d6;margin-bottom:16px;min-height:19px}.cloud-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.cloud-cell{border-radius:14px;background:#1a3848;border:1px solid #315261;padding:15px}.cloud-cell small{font-size:11px;color:#a8c8cd;display:block;margin-bottom:7px}.cloud-cell strong{font-size:clamp(20px,3vw,31px);color:#e8fcfc;display:block;line-height:1.25}.cloud-cell em{font-style:normal;color:#a8c8cd;font-size:11px}.cloud-chart{background:#0b2636;border:1px solid #294858;border-radius:14px;margin-top:16px;padding:12px}.cloud-charthead{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#c9e8ec;font-size:13px}.cloud-chart svg{display:block;width:100%;height:175px;margin-top:10px}.cloud-warning{font-size:12px;color:#c9e0e4;line-height:1.55;margin:14px 0 0}.cloud-warning b{color:#fae59b}.cloud-error{color:#ffd0be}@media(max-width:780px){.cloud-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.cloud-form input{width:100%;max-width:100%}}
+</style>
+<style id="drainiq-ocean-glass-v1">
+/* DRAINIQ OCEAN GLASS — visual-only redesign. Core device/AI/cloud JS unchanged. */
+:root{
+  --bg:#061824;--bg2:#092535;--card:#103041;--card-line:rgba(155,229,233,.2);
+  --white:#f3fcff;--muted:#adc9d3;--mint:#72e6dd;--mint-soft:#b7f4e9;
+  --aqua:#59d1e5;--lav:#8dceef;--danger:#ff8c89;--warning:#ffd17b;
+  --serif:'DM Sans',Inter,system-ui,sans-serif;
+}
+html{scroll-padding-top:90px}
+body{background:#061824;color:var(--white);font-family:var(--sans)}
+::selection{background:#7ce7e1;color:#072534}
+.site-wrap{background:linear-gradient(180deg,#071b2b 0,#09293a 19%,#071a2a 44%,#071b28 73%,#051724 100%);isolation:isolate}
+.site-wrap:before{content:"";position:absolute;z-index:0;inset:0 0 auto;height:1000px;pointer-events:none;background:radial-gradient(ellipse 38% 26% at 72% 24%,rgba(41,171,197,.22),transparent 76%),radial-gradient(ellipse 55% 28% at 8% 43%,rgba(27,116,164,.17),transparent 80%),linear-gradient(130deg,rgba(19,88,118,.13),transparent 35%)}
+.top-glow{top:10px;width:100%;height:900px;transform:translateX(-50%);background:radial-gradient(ellipse at 67% 32%,rgba(36,157,183,.15),rgba(13,78,109,.10) 37%,transparent 72%)}
+.starfield{opacity:.12;background-size:37px 37px;mask-image:linear-gradient(to bottom,transparent,black 20%,transparent 85%)}
+.orb{opacity:.5}
+.container{width:min(1330px,calc(100% - 78px))}
+.header{height:82px;border-bottom:1px solid rgba(181,225,237,.12)}
+.brand-mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(145deg,rgba(98,229,226,.24),rgba(32,131,183,.12));border:1px solid rgba(128,242,234,.44);box-shadow:0 8px 30px rgba(20,167,181,.1)}
+.brand-mark svg{width:26px;height:26px;stroke:var(--mint)!important}
+.brand-name{letter-spacing:-.065em;font-size:26px;font-weight:750}
+.brand-name span{color:#83ebe5}
+.nav{background:rgba(12,47,66,.55);border:1px solid rgba(185,236,239,.14);padding:11px 21px;gap:26px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.nav a{color:#b8d0da;font-size:12px}.nav a:hover,.nav a.active{color:#f6feff}.nav a.active:before{color:var(--mint)}
+.status-pill{background:#0b2a3b;border-color:rgba(103,208,218,.25);color:#cce8ec}
+.status-dot{background:#77e8d8;box-shadow:0 0 0 4px rgba(108,218,209,.14)}
+.small-outline{border-color:rgba(110,211,220,.45);color:#d9f5f7}.small-outline:hover{background:rgba(63,173,189,.17)}
+.hero{min-height:608px;padding:54px 0 78px;text-align:left;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:32px;align-items:center;position:relative}
+.hero:before{content:"";position:absolute;left:-12%;right:-12%;bottom:8px;height:140px;background:linear-gradient(180deg,transparent,rgba(24,102,133,.11));pointer-events:none;border-radius:50%}
+.hero-copy{position:relative;z-index:2;max-width:720px}
+.eyebrow{padding:10px 14px;border-color:rgba(104,225,219,.3);background:rgba(43,158,180,.13);color:#b4edf0;letter-spacing:.11em;font-size:10px}
+.eyebrow .tiny-glow{background:#74e5df;box-shadow:0 0 16px rgba(116,229,223,.85)}
+.hero h1{max-width:none;font-family:var(--sans);font-weight:750;font-size:clamp(54px,5.15vw,81px);letter-spacing:-.067em;line-height:1.055;text-wrap:balance;margin:24px 0 20px}
+.hero h1 em{font-family:var(--sans);font-style:normal;font-weight:750;color:#7de3e5;text-shadow:0 10px 46px rgba(21,173,197,.2)}
+.hero-sub{font-size:16px;line-height:1.76;color:#adcbd5;max-width:540px;margin:0}
+.hero-buttons{margin-top:31px;justify-content:flex-start;gap:12px;flex-wrap:wrap}
+.btn{border-radius:12px;padding:16px 21px;font-size:13px;letter-spacing:.002em}
+.btn-primary{background:linear-gradient(120deg,#a1f7eb,#66d9e0);color:#063044;box-shadow:0 12px 35px rgba(63,202,216,.18)}
+.btn-primary:hover{background:linear-gradient(120deg,#b6fff6,#82e4ea);box-shadow:0 14px 43px rgba(63,202,216,.28)}
+.btn-secondary{color:#e4f9fa;background:rgba(106,203,218,.07);border:1px solid rgba(132,222,231,.36)}.btn-secondary:hover{background:rgba(106,203,218,.15)}
+.hero-trust{display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap;margin-top:37px;color:#95b7c3;font-size:11px;letter-spacing:.025em}
+.hero-trust span{display:inline-flex;gap:8px;align-items:center}.hero-trust i{width:6px;height:6px;border-radius:50%;background:#70dedb;opacity:.9}
+.ocean-visual{width:100%;min-height:439px;position:relative;z-index:2;border:1px solid rgba(163,234,237,.3);border-radius:26px;padding:17px;background:linear-gradient(154deg,rgba(35,116,144,.38),rgba(9,41,62,.88) 44%,rgba(6,29,47,.96));box-shadow:0 35px 85px rgba(0,9,21,.42),inset 0 1px 0 rgba(232,255,255,.11);overflow:hidden}
+.ocean-visual:after{content:"";position:absolute;z-index:0;inset:0;pointer-events:none;background:linear-gradient(128deg,rgba(174,245,246,.11),transparent 23%,transparent 76%,rgba(25,181,209,.05))}
+.ocean-visual-header,.ocean-visual-footer{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.ocean-visual-header{font:10px var(--mono);letter-spacing:.07em;color:#d8f8fb;padding:4px 4px 14px}
+.ocean-visual-header .ocean-demo-label{padding:7px 10px;border-radius:30px;border:1px solid rgba(137,221,227,.27);background:rgba(95,218,223,.09);color:#a8eef1;font-size:9px}
+.ocean-chamber{position:relative;isolation:isolate;height:334px;border:1px solid rgba(179,230,239,.23);border-radius:16px;overflow:hidden;background:radial-gradient(ellipse 45% 50% at 52% 34%,rgba(52,157,187,.14),transparent 85%),linear-gradient(145deg,#082337,#0a3348 58%,#092338)}
+.ocean-chamber:before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:linear-gradient(90deg,rgba(208,250,250,.055) 1px,transparent 1px),linear-gradient(0deg,rgba(208,250,250,.055) 1px,transparent 1px);background-size:48px 48px;opacity:.6}
+.ocean-chamber:after{content:"";position:absolute;z-index:3;inset:0;pointer-events:none;box-shadow:inset 0 0 75px rgba(2,16,29,.42)}
+.ocean-water{position:absolute;inset:auto 0 0;height:48%;z-index:1;background:linear-gradient(180deg,rgba(61,197,209,.67) 0%,rgba(24,122,174,.69) 45%,rgba(8,74,112,.88) 100%);box-shadow:0 -8px 45px rgba(35,199,211,.16);animation:ocean-breath 6s ease-in-out infinite alternate}
+.ocean-wave{position:absolute;z-index:2;left:-3%;width:110%;top:-29px;height:47px;filter:drop-shadow(0 -2px 7px rgba(143,244,239,.45));animation:ocean-sway 7s ease-in-out infinite alternate}
+.ocean-wave.back{top:-19px;opacity:.49;animation-duration:9s;animation-direction:alternate-reverse}
+.ocean-bubbles{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:2}
+.ocean-bubbles b{position:absolute;bottom:10%;width:9px;height:9px;border:1px solid rgba(175,252,252,.7);border-radius:50%;background:rgba(190,255,255,.09);box-shadow:inset -1px -2px 4px rgba(255,255,255,.2);animation:rise-bubble 8s linear infinite}
+.ocean-bubbles b:nth-child(1){left:14%;animation-delay:-1s;width:7px;height:7px}.ocean-bubbles b:nth-child(2){left:47%;animation-delay:-4s;width:12px;height:12px}.ocean-bubbles b:nth-child(3){left:77%;animation-delay:-2.1s;width:6px;height:6px}.ocean-bubbles b:nth-child(4){left:87%;animation-delay:-6s;width:9px;height:9px}
+.ocean-sonar{position:absolute;z-index:4;top:16%;left:50%;transform:translateX(-50%);width:142px;height:92px;text-align:center;color:#c9fbf8}
+.ocean-sonar .sonar-module{position:absolute;top:0;left:50%;transform:translateX(-50%);width:65px;height:24px;border:1px solid #a6e4e9;border-radius:7px;background:linear-gradient(135deg,#346d87,#183a57);box-shadow:0 4px 15px #051a2d;border-bottom:3px solid #78dde3}
+.ocean-sonar .sonar-module:before,.ocean-sonar .sonar-module:after{content:"";position:absolute;top:5px;width:11px;height:11px;border:2px solid #8ddee2;background:#082b43;border-radius:50%}.ocean-sonar .sonar-module:before{left:10px}.ocean-sonar .sonar-module:after{right:10px}
+.ocean-sonar .pulse-one,.ocean-sonar .pulse-two{position:absolute;top:29px;left:50%;transform:translateX(-50%);width:65px;height:29px;border-bottom:2px solid rgba(128,238,231,.65);border-radius:0 0 50% 50%;animation:sonar-wave 2.9s ease-in-out infinite}
+.ocean-sonar .pulse-two{top:43px;width:109px;height:37px;animation-delay:-1.2s}
+.ocean-depth{position:absolute;z-index:4;inset:25px 18px 33px auto;display:flex;flex-direction:column;justify-content:space-between;color:#d0eff4;font:10px var(--mono);text-align:right;text-shadow:0 2px 5px #022}.ocean-depth span:after{content:"";display:inline-block;width:14px;height:1px;background:rgba(218,251,254,.65);margin-left:9px;vertical-align:middle}
+.ocean-scan-label{position:absolute;top:25px;left:22px;z-index:4;display:flex;align-items:center;gap:8px;color:#c4e8ee;font:10px var(--mono)}.ocean-scan-label i{width:7px;height:7px;background:#65eee1;border-radius:50%;box-shadow:0 0 12px #65eee1}
+.ocean-chamber-note{position:absolute;z-index:5;bottom:19px;left:19px;right:76px;color:#f1ffff;font-weight:650;font-size:13px;text-shadow:0 1px 9px #04364d}
+.ocean-visual-footer{padding:14px 5px 1px;color:#9abfcb;font:10px var(--mono);letter-spacing:.025em}
+.ocean-visual-footer strong{font-weight:500;color:#d9f7f8}
+@keyframes ocean-sway{from{transform:translateX(-2%)}to{transform:translateX(2%)}}
+@keyframes ocean-breath{from{height:46%}to{height:50%}}
+@keyframes rise-bubble{from{transform:translateY(5px);opacity:0}20%{opacity:.8}90%{opacity:.6}to{transform:translateY(-158px);opacity:0}}
+@keyframes sonar-wave{from{opacity:.15;scale:.88}50%{opacity:1;scale:1.05}to{opacity:.15;scale:.88}}
+.showcase{margin-top:-20px;height:auto;min-height:330px;align-items:stretch;grid-template-columns:1fr 1.08fr 1fr;gap:16px;padding-bottom:110px;perspective:none}
+.tilt-card,.showcase .middle{height:auto;min-height:300px;transform:none!important;border:1px solid rgba(157,226,235,.2);border-radius:21px;padding:24px;background:linear-gradient(145deg,rgba(18,63,85,.88),rgba(9,34,53,.96));box-shadow:0 19px 50px rgba(0,13,27,.21),inset 0 1px 0 rgba(241,255,255,.08)}
+.showcase .middle{background:linear-gradient(145deg,rgba(28,98,120,.89),rgba(12,56,78,.95) 55%,rgba(7,42,64,.98));border-color:rgba(154,235,233,.36);box-shadow:0 22px 55px rgba(0,13,27,.3),inset 0 1px 0 rgba(241,255,255,.08)}
+.tilt-card:after{background:radial-gradient(ellipse,rgba(49,165,198,.14),transparent 72%)}
+.card-top{color:#d9f4f6}.card-top .mini-dot{background:#78e8df;box-shadow:0 0 12px rgba(114,228,224,.6)}.card-top .muted{color:#9dc6cd}
+.site-row{border-color:rgba(155,222,230,.15);background:rgba(201,255,253,.035)}.site-row .site-name{color:#e4f9fa}.site-row .site-location{color:#a2c8d0}.site-row .site-level{color:#9bf2eb}
+.mini-tag{color:#bcf7f1;background:rgba(61,177,196,.13);border-color:rgba(139,233,234,.4)}
+.gauge-value,.forecast-value{font-family:var(--sans);font-weight:700;letter-spacing:-.065em}.gauge-value{font-size:69px}.forecast-value{font-size:43px}.gauge-ring .fill{stroke:#7febe2}.gauge-ring .water-glyph{color:#8deddf}.gauge-ring .track{stroke:rgba(190,247,249,.16)}
+.microcopy{color:#b8d6dc}.card-footer{border-color:rgba(179,230,232,.16)}
+.features{background:linear-gradient(180deg,rgba(7,27,42,.3),rgba(7,25,39,.96));padding:96px 0 108px}
+.section-title{font-family:var(--sans);font-size:clamp(37px,4.7vw,66px);font-weight:720;letter-spacing:-.058em;line-height:1.1}
+.section-title em{font-family:var(--sans);font-style:normal;font-weight:720;color:#84e6e6}
+.overline{color:#7de2e0}.section-sub{color:#a9cbd2}
+.feature,.process-step{border:1px solid rgba(157,225,229,.16);background:linear-gradient(155deg,rgba(23,68,86,.6),rgba(9,32,51,.8));box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.feature-num,.process-label{color:#8aebe4}.feature-icon{color:#8fe6e4}
+.storm-section{background:radial-gradient(ellipse 65% 42% at 50% 30%,rgba(35,141,172,.12),transparent 100%),#071b2a;border-top-color:rgba(156,225,232,.09)}
+.storm-controls,.storm-scene-card{border-color:rgba(148,217,227,.2);box-shadow:0 25px 58px rgba(0,12,25,.2)}
+.demo-section{background:radial-gradient(ellipse 75% 35% at 50% 30%,rgba(28,121,155,.12),transparent 75%),#071c2a}
+.cloud-panel{background:linear-gradient(142deg,rgba(27,96,123,.7),rgba(13,55,77,.92) 58%,rgba(8,43,63,.97))!important;border:1px solid rgba(134,227,229,.35)!important;box-shadow:0 24px 70px rgba(0,14,27,.26),inset 0 1px 0 rgba(247,255,255,.08)!important}
+.cloud-tag,.live-eyebrow,.ai-kicker{color:#8ff1e9!important}.cloud-panel h3,.live-title{font-family:var(--sans);font-weight:720;letter-spacing:-.045em}
+.cloud-intro,.live-desc,.ai-desc{color:#b4d2d9!important}
+.cloud-cell,.cloud-chart,.live-block,.live-history,.ai-metric{border-color:rgba(157,225,230,.18)!important;background:rgba(4,33,53,.35)!important}
+.cloud-cell strong,.live-stat strong,.ai-metric strong{color:#f3fdff}
+.cloud-form input,.live-inline-select{background:rgba(7,31,48,.8)!important;color:#e6f8fc!important;border-color:rgba(123,209,218,.4)!important}
+.cloud-form button,.live-btn{background:linear-gradient(120deg,#91f0e7,#69cfe3)!important;color:#06293b!important;border:1px solid rgba(200,255,249,.35)!important}
+.cloud-form button.secondary,.live-btn.ghost{background:rgba(111,203,218,.09)!important;color:#d8f4f7!important;border-color:rgba(149,224,232,.32)!important}
+.cloud-form button:disabled,.live-btn:disabled{opacity:.55;cursor:not-allowed}
+.live-panel{background:linear-gradient(140deg,rgba(20,67,85,.91),rgba(7,33,53,.97) 72%);border-color:rgba(146,223,228,.25)}
+.ai-panel{background:linear-gradient(130deg,rgba(16,67,83,.87),rgba(6,36,55,.95));border-color:rgba(107,209,223,.34)}
+.ai-flag.good{color:#97f3ce}.ai-flag.warn{color:#ffda92}
+.process{background:#061724}.explainer{background:#082030}
+.footer{border-top-color:rgba(152,221,229,.16)}
+.toast{background:#103b52;border-color:rgba(128,222,228,.58);color:#f0feff}
+@media(max-width:1200px){.nav{gap:14px;padding:11px 14px}.hero h1{font-size:clamp(49px,5.5vw,75px)}}
+@media(max-width:1000px){.hero{grid-template-columns:1fr 1fr;gap:20px}.hero h1{font-size:clamp(42px,5vw,63px)}.ocean-visual{min-height:399px}.ocean-chamber{height:296px}.showcase{padding-bottom:80px}.showcase .middle{height:auto}}
+@media(max-width:880px){.hero{grid-template-columns:1fr;padding-top:48px;min-height:unset;text-align:center;gap:32px}.hero-copy{max-width:750px;margin:auto}.hero h1{font-size:clamp(50px,9vw,75px)}.hero-sub{margin:auto}.hero-buttons,.hero-trust{justify-content:center}.ocean-visual{width:min(640px,100%);margin:auto}.showcase{margin-top:0;grid-template-columns:1fr 1fr}.showcase .middle{grid-column:1/-1;grid-row:1}.nav{display:none}.menu-layer.active{background:#082638;border-bottom:1px solid rgba(160,222,232,.22)}.mobile-menu{background:rgba(72,168,184,.12);border-color:rgba(165,230,231,.4)}}
+@media(max-width:650px){.container{width:calc(100% - 32px)}.hero{padding-top:35px;padding-bottom:47px}.hero h1{font-size:clamp(43px,10.5vw,60px);margin:20px 0}.hero-sub{font-size:14px}.hero-trust{font-size:10px;justify-content:center;margin-top:25px}.eyebrow{font-size:9px}.btn{padding:14px 15px}.ocean-visual{min-height:380px;padding:12px;border-radius:19px}.ocean-chamber{height:291px}.ocean-visual-header{font-size:9px}.ocean-visual-footer{font-size:9px}.showcase{grid-template-columns:1fr;gap:12px;padding-bottom:70px}.showcase .middle{grid-column:auto;grid-row:auto;min-height:290px}.tilt-card{min-height:230px}.features{padding:70px 0}.section-title{font-size:clamp(36px,8vw,49px)}.cloud-panel,.live-panel{border-radius:17px!important}.cloud-form{gap:10px}}
+@media(prefers-reduced-motion:reduce){.ocean-water,.ocean-wave,.ocean-bubbles b,.ocean-sonar span{animation:none!important}}
+
+</style>
+</head>
+<body>
+<div class="site-wrap">
+ <div class="top-glow"></div><div class="starfield"></div>
+ <header class="header container" id="top">
+   <a href="#top" class="brand" aria-label="DRAINIQ home">
+     <span class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#7de5e2" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2.5C9 7.8 5 11.5 5 16a7 7 0 0 0 14 0c0-4.5-4-8.2-7-13.5Z"/><path d="M8 16c1.2-1.1 2.4-1.1 3.7 0s2.5 1.1 3.7 0 2.3-1.1 3.6-.1"/></svg></span>
+     <span class="brand-name">DRAIN<span>IQ</span></span>
+   </a>
+   <nav class="nav" aria-label="Main navigation"><a class="active" href="#top">Главная</a><a href="#features">Преимущества</a><a href="#storm">Модель ливнёвки</a><a href="#cloud">Облако LIVE</a><a href="#demo">Демо</a><a href="#explain">Как работает</a></nav>
+   <div class="header-actions"><span class="status-pill"><span class="status-dot"></span> CLOUD + USB + ДЕМО</span><a class="small-outline" href="#cloud">Открыть LIVE ↗</a><button class="mobile-menu" id="menuButton" aria-label="Open navigation" aria-expanded="false">☰</button></div>
+ </header>
+ <nav class="menu-layer" id="mobileNav" aria-label="Mobile navigation"><a href="#top">Главная</a><a href="#features">Преимущества</a><a href="#storm">Модель ливнёвки</a><a href="#cloud">Облако LIVE</a><a href="#demo">Демо</a><a href="#explain">Как работает</a></nav>
+ <main>
+   <section class="hero container" aria-labelledby="main-title">
+     <div class="hero-copy">
+       <div class="eyebrow"><span class="tiny-glow"></span> DRAINIQ / SMART WATER MONITORING</div>
+       <h1 id="main-title">Уровень воды.<br><em>Под контролем.</em></h1>
+       <p class="hero-sub">Контролируй подъём воды, замечай опасные изменения и получай предупреждения вовремя. Реальные измерения ESP32, облачный мониторинг и умная аналитика — в одной системе.</p>
+       <div class="hero-buttons"><a class="btn btn-primary" href="#cloud">Открыть мониторинг <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></a><a class="btn btn-secondary" href="#storm">Посмотреть симуляцию ↗</a></div>
+       <div class="hero-trust"><span><i></i> ESP32 + HC-SR04</span><span><i></i> Cloud Dashboard</span><span><i></i> Telegram Alerts</span></div>
+     </div>
+     <div class="ocean-visual" aria-label="Иллюстрация ультразвукового измерения уровня воды — не живые показания">
+       <div class="ocean-visual-header"><span>WATER LEVEL / MONITORING</span><span class="ocean-demo-label">● ВИЗУАЛИЗАЦИЯ · НЕ LIVE</span></div>
+       <div class="ocean-chamber">
+         <div class="ocean-scan-label"><i></i> УЛЬТРАЗВУКОВОЙ ДАТЧИК</div>
+         <div class="ocean-sonar"><div class="sonar-module"></div><span class="pulse-one"></span><span class="pulse-two"></span></div>
+         <div class="ocean-water"><svg class="ocean-wave back" viewBox="0 0 800 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0 32 Q100 12 200 32 T400 32 T600 32 T800 32 V80 H0Z" fill="#80f1ed" opacity=".7"/></svg><svg class="ocean-wave" viewBox="0 0 800 80" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36 Q100 12 200 36 T400 36 T600 36 T800 36 V80 H0Z" fill="#42c8d4"/></svg><div class="ocean-bubbles"><b></b><b></b><b></b><b></b></div></div>
+         <div class="ocean-depth"><span>100%</span><span>80%</span><span>60%</span><span>40%</span><span>20%</span></div>
+         <div class="ocean-chamber-note">Измерение → анализ → предупреждение</div>
+       </div>
+       <div class="ocean-visual-footer"><span><strong>SENSOR:</strong> HC-SR04</span><span><strong>CONNECTIVITY:</strong> WI-FI / USB</span></div>
+     </div>
+   </section>
+   <div class="container showcase" aria-label="Предпросмотр панели DRAINIQ с демонстрационными данными">
+     <div class="tilt-card first">
+       <div class="card-top"><span><span class="mini-dot"></span> Сеть датчиков</span><span class="muted">ДЕМО / 03</span></div>
+       <div class="site-row"><span class="site-icon">◈</span><span><span class="site-name">Колодец A</span><div class="site-location">Астана · Тестовая точка</div></span><span class="site-level">42%</span></div>
+       <div class="site-row"><span class="site-icon">▥</span><span><span class="site-name">Паркинг B</span><div class="site-location">Астана · Тестовая точка</div></span><span class="site-level">27%</span></div>
+       <div class="site-row"><span class="site-icon">⌂</span><span><span class="site-name">Подвал C</span><div class="site-location">Астана · Тестовая точка</div></span><span class="site-level">18%</span></div>
+     </div>
+     <div class="tilt-card middle">
+       <div class="card-top"><span><span class="mini-dot"></span> Мониторинг воды</span><span class="mini-tag">● СИМУЛЯЦИЯ</span></div>
+       <div class="gauge-area"><div><div class="gauge-value"><span id="heroLevel">42</span><small>%</small></div><div class="microcopy">Текущий уровень воды</div></div><div class="gauge-ring"><svg viewBox="0 0 110 110"><circle class="track" cx="55" cy="55" r="45"/><circle class="fill" id="heroGauge" cx="55" cy="55" r="45"/></svg><div class="water-glyph">≈</div></div></div>
+       <div class="card-footer"><span class="microcopy">Состояние системы<br><strong id="heroStatus" style="color:var(--mint);display:block;margin-top:6px;font-size:14px">Всё в норме</strong></span><span class="mini-tag" id="heroTag">НИЗКИЙ РИСК</span></div>
+     </div>
+     <div class="tilt-card last">
+       <div class="card-top"><span><span class="mini-dot"></span> Анализ риска</span><span class="muted">ПРОГНОЗ</span></div>
+       <div class="forecast-value" id="heroForecast">Стабильно<small> без угрозы</small></div>
+       <div class="forecast-meta">Модель · условные данные</div>
+       <svg class="spark-chart" viewBox="0 0 360 115" aria-hidden="true"><defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7ce7e1" stop-opacity=".35"/><stop offset="1" stop-color="#7ce7e1" stop-opacity="0"/></linearGradient></defs><path d="M0 86 L44 75 L87 80 L134 58 L176 64 L219 38 L263 46 L310 19 L360 24 L360 115 L0 115Z" fill="url(#sparkFill)"/><path d="M0 86 L44 75 L87 80 L134 58 L176 64 L219 38 L263 46 L310 19 L360 24" fill="none" stroke="#7ce7e1" stroke-width="2.7" stroke-linecap="round"/></svg>
+     </div>
+   </div>
+   <section class="features" id="features"><div class="container"><div class="section-head"><div class="overline">ДЕЙСТВУЙ ЗАРАНЕЕ</div><h2 class="section-title">От первых измерений<br>к <em>раннему предупреждению.</em></h2><p class="section-sub">DRAINIQ объединяет доступные датчики, анализ уровня воды и наглядные предупреждения в одной системе.</p></div>
+     <div class="feature-grid"><article class="feature"><span class="feature-num">01 / ИЗМЕРЕНИЕ</span><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2c-4 6-7 9-7 13a7 7 0 0 0 14 0c0-4-3-7-7-13Z"/><path d="M8 16c1-2 3-2 4-1s3 1 4-1"/></svg></div><h3>Контроль уровня.</h3><p>Компактная система на ESP32 измеряет уровень воды в колодцах, подвалах и других местах с риском затопления.</p></article>
+     <article class="feature"><span class="feature-num">02 / АНАЛИЗ</span><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 19V5m0 14h18M6 15l4-4 4 2 6-8"/><circle cx="20" cy="5" r="1.5"/></svg></div><h3>Замечай изменения.</h3><p>Система показывает динамику уровня и оценивает, когда вода достигнет критической отметки, если скорость подъёма сохранится.</p></article>
+     <article class="feature"><span class="feature-num">03 / РЕАКЦИЯ</span><div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/><path d="M12 5v5"/></svg></div><h3>Предупреждай вовремя.</h3><p>Получай понятное предупреждение ещё до того, как вода выйдет на поверхность.</p></article></div>
+   </div></section>
+   <section class="storm-section" id="storm" aria-labelledby="stormTitle">
+     <div class="container">
+       <div class="storm-heading"><div><div class="overline">DRAINIQ / ИНТЕРАКТИВНАЯ МОДЕЛЬ ГОРОДА</div><h2 class="section-title" id="stormTitle">Наблюдай за ливнем.<br><em>Предотвращай риск.</em></h2><p class="section-sub">Управляй силой дождя и засором трубы. Смотри, как вода проходит через ливнёвку, поднимается в колодце и при переполнении выходит на улицу.</p></div><span class="simulation-label"><i></i> СИМУЛЯЦИЯ · НЕ ПОКАЗАНИЯ ДАТЧИКА</span></div>
+       <div class="storm-grid">
+         <div class="storm-scene-card">
+           <div class="storm-card-top"><strong>Городская ливнёвка <span style="color:#baff78">↗</span></strong><span class="scene-live">АНИМАЦИЯ / АСТАНА</span><span class="mono" id="stormClock">Т + 00 МИН</span></div>
+           <div class="city-stage" id="stormStage">
+             <div class="scene-hud"><span class="hud-chip">ДОЖДЬ <b id="rainHud">48</b> мм/ч</span><span class="hud-chip">ЗАСОР <b id="clogHud">20</b>%</span><span class="hud-chip" id="floodBadge">ДОРОГА <b id="roadHud">СУХО</b></span></div>
+             <svg viewBox="0 0 1180 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Анимация города с дождём, ливневой решёткой, дренажным колодцем, датчиком и водоотводящей трубой; уровень воды изменяется по мере дождя и засора">
+               <defs>
+                 <linearGradient id="skyGG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#19394c"/><stop offset="1" stop-color="#14232f"/></linearGradient>
+                 <linearGradient id="groundGG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#253d48"/><stop offset="1" stop-color="#101f2b"/></linearGradient>
+                 <linearGradient id="waterGG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#87efff"/><stop offset=".17" stop-color="#30c6eb"/><stop offset="1" stop-color="#0b5a8d"/></linearGradient>
+                 <linearGradient id="roadGG" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#314b54"/><stop offset="1" stop-color="#1a2d37"/></linearGradient>
+                 <clipPath id="skyClip"><rect width="1180" height="310"/></clipPath>
+                 <clipPath id="basinClip"><rect x="438" y="338" width="148" height="162" rx="7"/></clipPath>
+                 <clipPath id="roadClip"><rect x="0" y="265" width="1180" height="52"/></clipPath>
+                 <filter id="waterGlow"><feGaussianBlur stdDeviation="9"/></filter>
+               </defs>
+               <!-- atmospheric sky, distant skyline -->
+               <rect width="1180" height="314" fill="url(#skyGG)"/>
+               <circle cx="803" cy="95" r="140" fill="#b8ffef" opacity=".03" filter="url(#waterGlow)"/>
+               <g opacity=".35" fill="#1c3642"><rect x="10" y="176" width="110" height="110"/><rect x="125" y="157" width="75" height="130"/><rect x="220" y="199" width="110" height="90"/><rect x="730" y="186" width="95" height="110"/><rect x="840" y="149" width="145" height="150"/><rect x="1000" y="181" width="120" height="110"/></g>
+               <!-- buildings -->
+               <g><rect x="96" y="101" width="174" height="182" rx="4" fill="#264c5c" stroke="#82d4d7" stroke-opacity=".25"/><rect x="115" y="85" width="136" height="17" fill="#2a5968"/><g fill="#85d7cb" opacity=".38"><rect x="119" y="122" width="25" height="26" rx="2"/><rect x="158" y="122" width="25" height="26" rx="2"/><rect x="197" y="122" width="25" height="26" rx="2"/><rect x="119" y="163" width="25" height="26" rx="2"/><rect x="158" y="163" width="25" height="26" rx="2"/><rect x="197" y="163" width="25" height="26" rx="2"/><rect x="119" y="205" width="25" height="26" rx="2"/><rect x="158" y="205" width="25" height="26" rx="2"/><rect x="197" y="205" width="25" height="26" rx="2"/></g><rect x="915" y="114" width="145" height="170" rx="3" fill="#264453" stroke="#82d4d7" stroke-opacity=".2"/><g fill="#84bfbe" opacity=".34"><rect x="937" y="140" width="25" height="24"/><rect x="975" y="140" width="25" height="24"/><rect x="1013" y="140" width="25" height="24"/><rect x="937" y="183" width="25" height="24"/><rect x="975" y="183" width="25" height="24"/><rect x="1013" y="183" width="25" height="24"/><rect x="937" y="226" width="25" height="24"/><rect x="975" y="226" width="25" height="24"/><rect x="1013" y="226" width="25" height="24"/></g></g>
+               <g id="rainDropGroup" clip-path="url(#skyClip)"></g>
+               <!-- road and subsurface cross-section -->
+               <rect x="0" y="283" width="1180" height="317" fill="url(#groundGG)"/><path d="M0 316H1180" stroke="#496675" stroke-width="3"/><g opacity=".28" stroke="#7fb9c1" stroke-width="1"><path d="M0 353H418M602 353H1180M0 397H417M600 397H1180M0 505H1160M90 560H410M630 554H1110"/><path d="M230 320v270M720 325v70M958 500v100"/></g>
+               <rect x="0" y="270" width="1180" height="46" fill="url(#roadGG)"/><path d="M0 268H1180" stroke="#a0c7ca" stroke-opacity=".45" stroke-width="3"/><path d="M0 300H391M618 300H1180" stroke="#c6e4d8" stroke-opacity=".19" stroke-width="3" stroke-dasharray="38 37"/>
+               <g clip-path="url(#roadClip)"><rect id="streetWater" x="0" y="316" width="1180" height="0" fill="#3fd1f3" opacity=".68"/><path id="streetShimmer" d="M0 294Q115 289 230 294T460 294T690 294T920 294T1180 294" fill="none" stroke="#94efff" stroke-width="3" opacity="0"/></g>
+               <!-- grate and inlet with catch basin -->
+               <path d="M434 317L434 515Q434 524 443 524H585Q596 524 596 513V322" fill="#081b28" stroke="#6e98a1" stroke-width="9"/><path d="M439 330H590" stroke="#a2cbd2" stroke-width="7" opacity=".35"/>
+               <g clip-path="url(#basinClip)"><rect id="basinWater" x="439" y="460" width="154" height="40" fill="url(#waterGG)" opacity=".94"/><path id="basinWave" d="M442 460Q464 455 486 460T530 460T579 460" stroke="#bafaff" stroke-width="3" fill="none"/><g fill="#b6ffff" opacity=".6"><circle class="sparkle" cx="468" cy="486" r="2.8"/><circle class="sparkle" cx="523" cy="473" r="2"/></g></g>
+               <rect x="417" y="303" width="188" height="21" rx="4" fill="#6e9da5" stroke="#9dd0d4" stroke-width="3"/><g stroke="#122633" stroke-width="8"><line x1="436" y1="307" x2="436" y2="320"/><line x1="467" y1="307" x2="467" y2="320"/><line x1="498" y1="307" x2="498" y2="320"/><line x1="529" y1="307" x2="529" y2="320"/><line x1="560" y1="307" x2="560" y2="320"/><line x1="589" y1="307" x2="589" y2="320"/></g>
+               <!-- underground drain pipe with branch and outflow -->
+               <path d="M595 432H1032Q1055 432 1055 456V542" fill="none" stroke="#7396a0" stroke-width="72" stroke-linejoin="round" stroke-linecap="round"/><path d="M595 432H1032Q1055 432 1055 456V542" fill="none" stroke="#0b283a" stroke-width="53" stroke-linejoin="round" stroke-linecap="round"/>
+               <path id="pipeFlow" class="water-line" d="M593 443H1030Q1044 443 1044 460V543" fill="none" stroke="#46d5ff" stroke-width="21" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="60 32" opacity=".75"/>
+               <path d="M760 397v74" stroke="#c2dee0" stroke-width="3" stroke-dasharray="6 7" opacity=".6"/>
+               <g id="clogObject" opacity=".5" transform="translate(810,431)"><ellipse cx="0" cy="3" rx="13" ry="21" fill="#c7794c" stroke="#ffc18b" stroke-width="3"/><circle cx="-4" cy="-4" r="4" fill="#713f2d"/><circle cx="6" cy="8" r="3" fill="#713f2d"/></g>
+               <!-- sensor and ultrasound lines -->
+               <rect x="485" y="335" width="28" height="15" rx="5" fill="#c8ff90" stroke="#d8ffc3" stroke-width="2"/><path d="M499 352V393" stroke="#ccf9ab" stroke-width="2" stroke-dasharray="4 5" opacity=".6"/><path class="sonar-ring" d="M480 371Q499 395 518 371" fill="none" stroke="#baff78" stroke-width="3"/><path class="sonar-ring" d="M473 386Q499 414 525 386" fill="none" stroke="#baff78" stroke-width="2"/>
+               <!-- road curbs / trees -->
+               <g><path d="M336 270V201" stroke="#547983" stroke-width="8"/><circle cx="333" cy="183" r="34" fill="#387c76" opacity=".85"/><circle cx="315" cy="193" r="22" fill="#438a7d"/><path d="M835 270V220" stroke="#547983" stroke-width="8"/><circle cx="832" cy="196" r="29" fill="#36746f"/><circle cx="815" cy="202" r="19" fill="#40877b"/></g>
+               <!-- scene callouts -->
+               <g font-size="14" font-family="Arial, sans-serif"><rect x="367" y="235" rx="9" width="161" height="30" fill="#0a202d" stroke="#a2c6c133"/><text x="448" y="254" text-anchor="middle" fill="#e3f7ed">Ливневая решётка</text><path d="M501 264L508 301" stroke="#bedee1" stroke-opacity=".7" stroke-width="1.5"/><rect x="326" y="524" rx="9" width="205" height="34" fill="#0b2631" stroke="#baff7850"/><text x="430" y="546" text-anchor="middle" fill="#d6ffb0">↗ Датчик + ESP32</text><path d="M485 523L499 351" stroke="#baff78" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="5 5"/><rect x="689" y="514" width="157" height="33" rx="9" fill="#0b2631" stroke="#55c1dd55"/><text x="767" y="535" text-anchor="middle" fill="#aeeaff">Отводящая труба →</text><path d="M770 514L785 469" stroke="#58b9d0" stroke-opacity=".6" stroke-width="1.5"/></g>
+               <rect x="0" y="0" width="1180" height="600" fill="none" stroke="#a9d1d51d" stroke-width="2"/>
+             </svg><div class="stage-shade"></div>
+           </div>
+           <div class="scene-caption"><span>СХЕМА В РАЗРЕЗЕ · УЧЕБНАЯ МОДЕЛЬ</span><div class="mini-legend"><span><i class="legend-mark"></i> Вода</span><span><i class="legend-mark purple"></i> Датчик</span><span><i class="legend-mark orange"></i> Засор</span></div></div>
+           <div class="scene-steps" aria-label="Путь воды через систему"><div class="scene-step"><span>01 / ПОВЕРХНОСТЬ</span><strong>Дождь на улице</strong><small>Вода стекает к решётке</small></div><div class="scene-step"><span>02 / ИЗМЕРЕНИЕ</span><strong>Мониторинг уровня</strong><small>Сенсор наблюдает за колодцем</small></div><div class="scene-step"><span>03 / ВОДООТВОД</span><strong>Отвод через трубу</strong><small>Засор затрудняет отток</small></div></div>
+         </div>
+         <aside class="storm-controls" aria-label="Управление моделью ливневой канализации">
+           <div class="sc-control-title"><h3>Управление ливнем <span style="color:#baff78">↗</span></h3><span>ДЕМО / МОДЕЛЬ</span></div>
+           <div><div class="sc-row"><span>🌧️ Интенсивность дождя</span><strong id="rainValue">48 мм/ч</strong></div><input class="sc-slider" type="range" min="0" max="100" step="1" value="48" id="rainRange" aria-label="Интенсивность дождя от нуля до ста миллиметров в час"/><p class="sc-hint">Чем сильнее дождь, тем больше воды поступает в колодец.</p></div>
+           <div><div class="sc-row"><span>🪨 Засор трубы</span><strong id="clogValue">20%</strong></div><input class="sc-slider" type="range" min="0" max="100" step="1" value="20" id="clogRange" aria-label="Степень засора трубы"/><p class="sc-hint">При засоре падает пропускная способность водоотвода.</p></div>
+           <div class="sc-quick"><button class="sc-button cta" id="scenarioStorm" type="button">⚡ Ливень + засор</button><button class="sc-button" id="scenarioNormal" type="button">↺ Сброс</button><button class="sc-button" id="scenarioPause" type="button" aria-pressed="false">Ⅱ Пауза</button></div>
+           <div class="sc-divider"></div>
+           <div class="sc-status" id="stormStatusBox" role="status" aria-live="polite"><i class="sc-circle"></i><div><b id="stormStatus">Система в норме</b><p id="stormMessage">Вода свободно уходит по ливневой трубе.</p></div></div>
+           <div class="sc-stats"><div class="sc-stat"><label>УРОВЕНЬ В КОЛОДЦЕ</label><strong id="stormLevel">24</strong><small>%</small></div><div class="sc-stat"><label>ПРОПУСКНАЯ СПОСОБНОСТЬ</label><strong id="stormCapacity">80</strong><small> усл. ед.</small></div><div class="sc-stat"><label>ВРЕМЯ ДО ПЕРЕПОЛНЕНИЯ</label><strong id="stormETA">—</strong><small id="stormETAUnit"></small></div><div class="sc-stat"><label>ВОДА НА УЛИЦЕ</label><strong id="stormFlood">0</strong><small>%</small></div></div>
+           <p class="sc-disclaimer">1 секунда ≈ 1 минута модельного времени. Это упрощённая модель водного баланса, а не прогноз для реального города.</p>
+         </aside>
+       </div>
+       <div class="storm-footnote"><span class="icon-light">✧</span><p><strong>Попробуй сценарий:</strong> нажми «Ливень + засор». Дождь начнёт переполнять колодец, уровень воды поднимется, а при выходе воды на поверхность DRAINIQ покажет критическое предупреждение. Затем нажми «Сброс» и посмотри, как свободная труба отводит воду.</p></div>
+     </div>
+   </section>
+
+   <section class="demo-section" id="demo"><div class="container"><div class="demo-head"><div><div class="overline">ИНТЕРАКТИВНЫЙ ПРОТОТИП</div><h2 class="section-title">Центр <em>мониторинга.</em></h2><p class="section-sub">Испытай прототип: меняй уровень воды и наблюдай за показаниями, графиком и предупреждениями.</p></div><div class="demo-indicator"><span class="status-dot"></span> СИМУЛЯЦИЯ · ДАТЧИК НЕ ПОДКЛЮЧЁН</div></div>
+
+
+     <section class="cloud-panel" id="cloud" aria-label="DRAINIQ Cloud — удалённый мониторинг">
+       <div class="cloud-top"><div><div class="cloud-tag">DRAINIQ CLOUD / REMOTE LIVE</div><h3>Мониторинг через интернет</h3></div><span class="cloud-indicator" id="cloudIndicator">ОЖИДАЕМ КАНАЛ</span></div>
+       <p class="cloud-intro">ESP32 передаёт реальные данные через Wi-Fi в ThingSpeak. Этот раздел показывает их на любом телефоне или компьютере без подключения USB. Демо-модель и локальный USB-мониторинг находятся ниже и работают отдельно.</p>
+       <div class="cloud-form"><label for="cloudChannel">Публичный Channel ID:</label><input id="cloudChannel" type="text" inputmode="numeric" pattern="[0-9]+" placeholder="например 1234567" autocomplete="off"><button id="cloudStart" type="button">Подключить облако</button><button class="secondary" id="cloudShare" type="button">Скопировать ссылку</button></div>
+       <div id="cloudStatusLine" class="cloud-statusline" role="status" aria-live="polite">Введи ID созданного канала ThingSpeak.</div>
+       <div class="cloud-metrics">
+        <div class="cloud-cell"><small>ЗАПОЛНЕНИЕ</small><strong id="cloudFill">— %</strong><em>относительно высоты пустого контейнера</em></div>
+        <div class="cloud-cell"><small>РАССТОЯНИЕ ДО ВОДЫ</small><strong id="cloudDistance">— см</strong><em>реальное измерение ESP32</em></div>
+        <div class="cloud-cell"><small>СТАТУС</small><strong id="cloudRisk">—</strong><em>по данным ESP32</em></div>
+        <div class="cloud-cell"><small>СКОРОСТЬ ПОДЪЁМА</small><strong id="cloudRate">—</strong><em>см/мин</em></div>
+       </div>
+       <div class="cloud-chart"><div class="cloud-charthead"><strong>Последние измерения</strong><span id="cloudTimestamp">Нет данных</span></div><svg id="cloudSvg" viewBox="0 0 700 170" role="img" aria-label="График заполнения контейнера на основе измерений ThingSpeak"><line x1="15" y1="30" x2="685" y2="30" stroke="#376070"/><line x1="15" y1="85" x2="685" y2="85" stroke="#376070"/><line x1="15" y1="140" x2="685" y2="140" stroke="#376070"/><path id="cloudLine" fill="none" stroke="#5bf1d1" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" d=""/><text x="18" y="20" fill="#b5ced6" font-size="11">100%</text><text x="18" y="158" fill="#b5ced6" font-size="11">0%</text></svg></div>
+       <p class="cloud-warning"><b>Важно:</b> облачные данные обновляются примерно раз в 20 секунд. Если ESP32 перестал отправлять показания, раздел покажет «Нет свежих данных», а не старое значение как живое. AI v0.1 ниже обрабатывает только USB-поток — в облачном режиме AI пока не запускается. Публичный канал не должен содержать адреса, имена или секреты.</p>
+     </section>
+
+     <section class="live-panel" id="live" aria-label="Живые данные с ESP32">
+       <div class="live-top">
+         <div>
+           <div class="live-eyebrow">DRAINIQ / USB · AI VERSION 2.1</div>
+           <h3 class="live-title">ESP32 · Живой мониторинг</h3>
+           <p class="live-desc">Подключи ESP32 к компьютеру через USB и закрой Serial Monitor в Arduino IDE. Здесь показываются настоящие данные HC-SR04 с фильтрацией ошибок, трендом и историей. Симуляция дождя и труб ниже работает отдельно.</p>
+         </div>
+         <span class="live-pill" id="livePill"><i class="live-dot"></i><span id="livePillText">НЕ ПОДКЛЮЧЕНО</span></span>
+       </div>
+       <div class="live-actions">
+         <button class="live-btn" id="liveConnect" type="button">◉ Подключить ESP32</button>
+         <button class="live-btn ghost" id="liveDisconnect" type="button" disabled>Отключить</button>
+         <span class="live-updated" id="liveLastUpdate">Последнее обновление: —</span>
+       </div>
+       <div class="live-body">
+         <div class="live-block">
+           <div class="live-label">Расстояние до поверхности · после фильтрации</div>
+           <div class="live-distance"><span id="liveDistance">—</span><small>см</small></div>
+           <div class="live-metrics">
+             <div class="live-metric"><div class="live-label">Заполнение контейнера*</div><strong id="livePercent">— %</strong></div>
+             <div class="live-metric"><div class="live-label">Статус</div><strong id="liveRisk" style="font-size:15px;color:var(--muted)">ОЖИДАНИЕ</strong></div>
+           </div>
+           <div class="live-meter" aria-label="Процент заполнения"><div id="liveMeterFill"></div></div>
+           <div class="live-telemetry">
+             <div class="live-stat"><div class="live-label">Скорость подъёма</div><strong id="liveSpeed">— см/мин</strong><small id="liveSpeedHint">Появится после 10 секунд измерений</small></div>
+             <div class="live-stat"><div class="live-label">Качество сигнала</div><strong id="liveQuality">ОЖИДАНИЕ</strong><small id="liveQualityHint">Фильтр отклоняет одиночные скачки</small></div>
+           </div>
+           <div class="live-legend" aria-label="Пороги опасности">
+             <span class="live-risk-tag good">● НОРМА &lt; 60%</span>
+             <span class="live-risk-tag mid">● ВНИМАНИЕ 60–79%</span>
+             <span class="live-risk-tag high">● ОПАСНО ≥ 80%</span>
+           </div>
+           <div class="live-alert" role="status" aria-live="polite" id="liveInfo">Подключи ESP32, чтобы получать живые измерения.</div>
+         </div>
+         <div class="live-block">
+           <div class="live-chart-meta">
+             <div class="live-label">История реального расстояния · отфильтровано</div>
+             <select class="live-inline-select" id="liveHistoryRange" aria-label="Промежуток на графике">
+               <option value="60000">1 минута</option>
+               <option value="300000" selected>5 минут</option>
+               <option value="900000">15 минут</option>
+               <option value="all">Вся история</option>
+             </select>
+           </div>
+           <svg class="live-chart" viewBox="0 0 580 145" role="img" aria-label="История измеренного расстояния. Меньше расстояние — выше вода.">
+             <line class="live-chart-grid" x1="8" y1="25" x2="572" y2="25"/>
+             <line class="live-chart-grid" x1="8" y1="73" x2="572" y2="73"/>
+             <line class="live-chart-grid" x1="8" y1="121" x2="572" y2="121"/>
+             <path class="live-chart-line" id="liveChartPath" d=""/>
+           </svg>
+           <div class="live-chart-ticks"><span id="liveChartStart">—</span><span id="liveChartRangeLabel">Здесь появится история</span><span id="liveChartEnd">—</span></div>
+           <p class="live-hint" style="margin-top:12px">Чем меньше расстояние, тем выше вода. Сайт не подменяет реальные измерения симуляцией; одиночные резкие скачки проверяются повторным показанием.</p>
+           <div class="live-calibration">
+             <label for="emptyDepth">От датчика до дна пустого контейнера (см):</label>
+             <input id="emptyDepth" type="number" inputmode="decimal" min="2" max="400" step="0.1" placeholder="например 13">
+             <button type="button" class="live-btn ghost" id="liveCalibrate" style="padding:10px 14px">Сохранить</button>
+           </div>
+           <p class="live-hint">* Единые пороги сайта и Telegram: 0–59% — норма, 60–79% — внимание, от 80% — опасно. При подключении USB сайт получает высоту пустого контейнера от ESP32. Для синхронизации используй обновлённую прошивку. Без неё значение сохранится только на сайте.</p>
+         </div>
+       </div>
+
+       <section class="ai-panel" aria-label="Экспериментальный анализ искусственного интеллекта">
+         <div class="ai-head">
+           <div><div class="ai-kicker">DRAINIQ AI · ANOMALY DETECTION · EXPERIMENTAL v0.1</div>
+             <h4 class="ai-title">Модель машинного обучения</h4></div>
+           <span class="ai-flag" id="aiFlag">ОЖИДАЕМ ДАННЫЕ</span>
+         </div>
+         <p class="ai-desc">Реальная обученная модель Isolation Forest проверяет необычные изменения расстояния до воды за 8 и 15 секунд. Работает прямо в браузере, без передачи показаний на сервер. Не является прогнозом затопления.</p>
+         <div class="ai-metrics">
+           <div class="ai-metric"><label>Изменение за 8 секунд</label><strong id="aiRise8">— см</strong></div>
+           <div class="ai-metric"><label>Изменение за 15 секунд</label><strong id="aiRise15">— см</strong></div>
+           <div class="ai-metric"><label>Оценка AI</label><strong id="aiScore">—</strong></div>
+         </div>
+         <p class="ai-small" id="aiExplanation" role="status" aria-live="polite">Подключи ESP32. После 10 секунд новых измерений модель начнёт анализ.</p>
+         <p class="ai-small" style="margin-top:9px">⚠️ Экспериментальная функция: возможны ложные тревоги и пропуски. Обычные пороговые предупреждения и Telegram продолжают работать независимо.</p>
+       </section>
+
+       <div class="live-history">
+         <div class="live-history-head">
+           <div><div class="live-label">Журнал наблюдений</div><h4>Последние измерения <span class="live-count" id="liveHistoryCount">0 записей</span></h4></div>
+           <div class="live-actions">
+             <button type="button" class="live-btn ghost" id="liveExport" disabled>↓ Скачать CSV</button>
+             <button type="button" class="live-btn ghost" id="liveClear" disabled>Очистить историю</button>
+           </div>
+         </div>
+         <div class="live-table-wrap">
+           <table class="live-table" aria-label="Таблица измерений DRAINIQ">
+             <thead><tr><th>Время</th><th>Сырой сигнал</th><th>После фильтра</th><th>Заполнение</th><th>Статус</th></tr></thead>
+             <tbody id="liveHistoryBody"><tr><td class="empty-data" colspan="5">Здесь будут реальные данные после подключения ESP32.</td></tr></tbody>
+           </table>
+         </div>
+         <p class="live-extra-note">История хранится только в браузере этого компьютера, автоматически сохраняется и доступна для скачивания в CSV. При новом подключении прошлые данные сохраняются; для удаления используй «Очистить историю». Это учебный прототип, а не сертифицированная система оповещения.</p>
+       </div>
+     </section>
+
+     <div class="dashboard">
+       <section class="panel" aria-label="Панель мониторинга воды, демонстрационные данные"><div class="panel-inner"><div class="panel-heading"><h3>Уровень воды</h3><span>ОБЪЕКТ A-01 / ДЕМО</span></div>
+         <div class="level-banner"><div><div class="level-big" id="largeLevel">42<small>%</small></div><div style="color:#8ca59a;font-size:12px;margin-top:12px">Заполнение резервуара</div></div><div class="level-status" id="levelStatus">● НОРМА</div></div>
+         <div class="chart-wrap"><svg id="historyChart" viewBox="0 0 700 210" role="img" aria-label="График уровня воды в демонстрационном режиме"><defs><linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#55e6d1" stop-opacity=".32"/><stop offset="1" stop-color="#55e6d1" stop-opacity=".015"/></linearGradient></defs><g id="chartGrid"></g><path id="chartFill" class="chart-area"></path><path id="chartLine" class="chart-line"></path><circle id="chartPoint" class="chart-dot" r="5"></circle></svg><div class="chart-legend"><span>Уровень воды</span><span>Опасный порог (80%)</span></div></div>
+         <div class="bottom-metrics"><div class="metric"><div class="metric-label">ГЛУБИНА ВОДЫ</div><div class="metric-val"><span id="waterDepth">12.6</span> <small>см</small></div></div><div class="metric"><div class="metric-label">ИЗМЕНЕНИЕ УРОВНЯ</div><div class="metric-val" id="trendVal">—</div></div><div class="metric"><div class="metric-label">УРОВЕНЬ РИСКА</div><div class="metric-val" id="riskVal" style="color:var(--mint)">Низкий</div></div></div>
+       </div></section>
+       <section class="panel sim-panel" aria-label="Интерактивный тестовый резервуар"><div class="panel-inner"><div class="panel-heading"><h3>Тестовый резервуар</h3><span>РУЧНОЕ УПРАВЛЕНИЕ</span></div>
+         <div class="tank-zone"><div class="tank-holder"><span class="sensor"></span><div class="tank"><div class="threshold-marker"></div><div class="threshold-caption">80%</div><div class="water" id="tankWater"></div></div></div><div class="tank-scale"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div></div>
+         <p class="simulation-note">Виртуальный резервуар высотой 30 см. Двигай ползунок или добавляй воду, чтобы проверить предупреждения.</p>
+         <div class="slider-header"><span>Уровень воды</span><span id="sliderText">42%</span></div><input type="range" id="waterSlider" min="0" max="100" value="42" step="1" aria-label="Уровень воды в процентах"/>
+         <div class="control-buttons"><button type="button" class="control-btn primary" id="addWater">+ Добавить воду</button><button type="button" class="control-btn" id="drainWater">− Слить воду</button></div>
+         <div class="auto-line"><div class="left-label">Автозаполнение<span>Уровень растёт каждую секунду</span></div><label class="switch" title="Автозаполнение"><input type="checkbox" id="autoFill" aria-label="Автоматически повышать уровень воды"/><span class="switch-ui"></span></label></div>
+       </div></section>
+     </div>
+     <div class="notification" id="alertBox" role="status" aria-live="polite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg><div><b id="alertTitle">Система работает нормально</b><p id="alertDescription">Уровень воды безопасен. Здесь показаны демонстрационные данные.</p></div></div>
+   </div></section>
+   <section class="process" id="how"><div class="container"><div class="section-head"><div class="overline">ЭЛЕКТРОНИКА + ПРОГРАММА</div><h2 class="section-title">Одна умная система.<br><em>Четыре простых шага.</em></h2><p class="section-sub">Простой прототип на доступных компонентах, который можно развить в настоящую сеть мониторинга.</p></div>
+     <div class="process-grid"><article class="process-step"><div class="step-index">01 — ИЗМЕРИТЬ</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c-4 5-7 8-7 12a7 7 0 0 0 14 0c0-4-3-7-7-12Z"/></svg></div><h3>Датчик уровня</h3><p>Ультразвуковой датчик измеряет расстояние до поверхности воды сверху, не касаясь её.</p></article>
+     <article class="process-step"><div class="step-index">02 — ПЕРЕДАТЬ</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="14" height="14" rx="3"/><path d="M9 9h6v6H9zM1 9h4m14 0h4M1 15h4m14 0h4M9 1v4m6-4v4M9 19v4m6-4v4"/></svg></div><h3>ESP32</h3><p>Микроконтроллер рассчитывает уровень воды и передаёт показания через Wi-Fi.</p></article>
+     <article class="process-step"><div class="step-index">03 — ПРОАНАЛИЗИРОВАТЬ</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 19V5m0 14h18m-15-4 5-5 4 2 5-7"/></svg></div><h3>Анализ показаний</h3><p>Программа отслеживает рост уровня и приближение к опасным отметкам.</p></article>
+     <article class="process-step"><div class="step-index">04 — ПРЕДУПРЕДИТЬ</div><div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/></svg></div><h3>Сигнал опасности</h3><p>Сайт показывает предупреждение, чтобы ответственные службы могли отреагировать заранее.</p></article></div>
+   </div></section>
+   <section class="explainer" id="explain" aria-labelledby="explainTitle"><div class="container"><div class="explain-head"><div class="overline">О ПРОЕКТЕ / ЧТО ТАКОЕ DRAINIQ</div><h2 class="section-title" id="explainTitle">Больше, чем датчик.<br><em>Предупреждение заранее.</em></h2><p class="section-sub">DRAINIQ — это идея умной системы мониторинга ливневой канализации. Она помогает заметить быстро растущий уровень воды в колодце до того, как вода выйдет на дорогу, в паркинг или подвал.</p></div>
+   <div class="explain-grid"><article class="explain-card"><span class="explain-num">01 / ДОЖДЬ</span><h3>Дождь попадает в ливнёвку</h3><p>Вода с крыш и улиц течёт к решётке и попадает в водосборный колодец. Исправная труба отводит воду дальше по системе.</p></article><article class="explain-card"><span class="explain-num">02 / МОНИТОРИНГ</span><h3>Датчик следит за уровнем</h3><p>Водозащищённый ультразвуковой датчик устанавливается сверху внутри колодца и измеряет расстояние до воды. ESP32 преобразует расстояние в уровень и отправляет данные по связи.</p></article><article class="explain-card"><span class="explain-num">03 / ПРЕДУПРЕЖДЕНИЕ</span><h3>DRAINIQ подаёт сигнал</h3><p>Сайт показывает уровень, скорость его изменения и предупреждения. Если вода продолжает подниматься, система оценивает время до установленного порога.</p></article></div>
+   <div class="explain-bottom"><div><strong>Почему возникает затопление?</strong><p>Когда поступающий поток воды больше, чем труба способна отвести, колодец постепенно заполняется. Засор уменьшает пропускную способность. При переполнении вода может начать скапливаться на поверхности. В модели можно менять дождь и засор, чтобы увидеть эту зависимость.</p></div><div><strong>Что реально, а что пока демонстрация?</strong><p>Анимация дождя, труб, засора и прогноз на этом сайте — <b>симуляция</b>, а не реальные показания. В отдельной панели DRAINIQ LIVE можно подключить настоящий ESP32 через USB и проверить реальные расстояния. Городская анимация и прогноз по-прежнему работают в режиме симуляции; для установки в городе нужны калибровка, надёжная связь и питание.</p></div></div>
+   </div></section>
+
+   <section class="purpose"><div class="container"><div class="overline">DRAINIQ / STARTUP BATTLE 2026</div><h2 class="section-title">Лучшая защита<br>начинается <em>до затопления.</em></h2><p class="section-sub">От школьного прототипа к идее более безопасной городской инфраструктуры. Каждое измерение имеет значение.</p><a class="btn btn-primary" href="#demo">Попробовать прототип ↗</a></div></section>
+ </main>
+ <footer class="container footer"><div><strong>DRAINIQ</strong> © 2026. Разработано для решения реальной проблемы.</div><div class="footer-right"><span>Концепция прототипа · Астана, Казахстан</span><a href="#top">Наверх ↑</a></div></footer>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+  // Interactive stormwater scenario (isolated from the existing test-tank demo).
+  (() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const rainControl = $('rainRange'), clogControl = $('clogRange'), stage = $('stormStage');
+    if (!rainControl || !stage) return;
+    const state = {rain:48,clog:20,level:24,flood:0,minute:0,paused:false,flow:0};
+    const dropGroup=$('rainDropGroup');
+    const NS='http://www.w3.org/2000/svg';
+    for(let i=0;i<100;i++){
+      const drop=document.createElementNS(NS,'line');
+      const x=(i*127.7+29)%1180;
+      const y=(i*83.9+13)%285-330;
+      drop.setAttribute('x1',x);drop.setAttribute('y1',y);
+      drop.setAttribute('x2',x-8);drop.setAttribute('y2',y+23);
+      drop.setAttribute('class','rain-drop');
+      drop.style.animationDelay=(-(i*0.13)%1.1)+'s';
+      drop.style.animationDuration=(.76+(i%7)*.09)+'s';
+      dropGroup.appendChild(drop);
+    }
+    const drops=[...dropGroup.children];
+    function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+    function fmt(n){return String(Math.floor(n)).padStart(2,'0');}
+    function cap(){return 100*(1-state.clog/100);}
+    function input(){return state.rain;}
+    function draw(){
+      const rain=state.rain,clog=state.clog,capacity=cap();
+      $('rainValue').textContent=rain+' мм/ч';$('clogValue').textContent=clog+'%';
+      $('rainHud').textContent=rain;$('clogHud').textContent=clog;
+      $('stormClock').textContent='Т + '+fmt(state.minute)+' МИН';
+      $('stormLevel').textContent=Math.round(state.level);
+      $('stormCapacity').textContent=Math.round(capacity);
+      $('stormFlood').textContent=Math.round(state.flood);
+      $('roadHud').textContent=state.flood>1?'ЗАТОПЛЕНО':'СУХО';
+      $('floodBadge').classList.toggle('alert',state.flood>1);
+      const diff=input()-capacity;
+      $('stormETA').textContent=diff>0.5&&state.flood<1?Math.max(1,Math.ceil((100-state.level)*6/diff)):'—';
+      $('stormETAUnit').textContent=diff>0.5&&state.flood<1?'мин. (модель)':'';
+      const waterH=clamp(state.level/100*160,0,160);
+      $('basinWater').setAttribute('y',(500-waterH).toFixed(1));$('basinWater').setAttribute('height',waterH.toFixed(1));
+      $('basinWave').setAttribute('transform',`translate(0 ${(500-waterH)-460})`);
+      const streetH=clamp(state.flood/100*43,0,43);
+      $('streetWater').setAttribute('height',streetH.toFixed(1));$('streetWater').setAttribute('y',(316-streetH).toFixed(1));
+      $('streetShimmer').setAttribute('opacity',streetH>.6?'.8':'0');
+      $('streetShimmer').setAttribute('transform',`translate(0,${22-streetH})`);
+      $('clogObject').setAttribute('opacity',clog===0?'.02':(.15+clog/115).toFixed(2));
+      $('clogObject').setAttribute('transform',`translate(810,431) scale(${(.2+clog/55).toFixed(2)},${(.3+clog/60).toFixed(2)})`);
+      const flow=$('pipeFlow');flow.style.opacity=(.08+.8*state.flow/100).toFixed(2);
+      flow.style.strokeWidth=(Math.max(5,Math.min(22,state.flow/5))).toFixed(1);
+      const visible=Math.ceil(rain);
+      drops.forEach((d,i)=>{d.style.opacity=i<visible?String(.20+rain/150):'0';});
+      const s=state.flood>1||state.level>=80?'critical':state.level>=60?'warning':'normal';
+      const box=$('stormStatusBox');box.className='sc-status'+(s==='normal'?'':' '+s);
+      const labels={normal:'Система в норме',warning:'⚠ Уровень повышается',critical:'⚠ Опасность затопления'};
+      const desc={normal:'Ливнёвка отводит воду. Уровень колодца безопасен.',warning:'Уровень воды растёт: нужно проверить дренаж.',critical:state.flood>1?'Колодец переполнен: вода вышла на улицу!':'Уровень достиг порога 80%. Требуется внимание.'};
+      $('stormStatus').textContent=labels[s];$('stormMessage').textContent=desc[s];
+      rainControl.value=String(rain);clogControl.value=String(clog);
+      stage.classList.toggle('paused',state.paused);
+      $('scenarioPause').textContent=state.paused?'▶ Продолжить':'Ⅱ Пауза';
+      $('scenarioPause').setAttribute('aria-pressed',String(state.paused));
+    }
+    function tick(){
+      if(state.paused)return;
+      state.minute++;
+      const rainfall=input(),maxOut=cap();
+      // Educational reservoir model: 6 units of inflow/outflow equals 1% of pit storage.
+      const available=rainfall+state.level*2.3;
+      const outflow=Math.min(maxOut,available);
+      state.flow=outflow;
+      const next=state.level+(rainfall-outflow)/6;
+      if(next>100){state.flood=clamp(state.flood+(next-100)*1.7,0,100);state.level=100;}
+      else {state.level=clamp(next,0,100);if(state.flood>0)state.flood=clamp(state.flood-(maxOut-rainfall>0?(maxOut-rainfall)/5:0),0,100);}
+      draw();
+    }
+    rainControl.addEventListener('input',e=>{state.rain=+e.target.value;draw();});
+    clogControl.addEventListener('input',e=>{state.clog=+e.target.value;draw();});
+    $('scenarioStorm').addEventListener('click',()=>{Object.assign(state,{rain:95,clog:78,level:24,flood:0,minute:0,paused:false,flow:20});draw();});
+    $('scenarioNormal').addEventListener('click',()=>{Object.assign(state,{rain:25,clog:5,level:18,flood:0,minute:0,paused:false,flow:25});draw();});
+    $('scenarioPause').addEventListener('click',()=>{state.paused=!state.paused;draw();});
+    state.flow=48;draw();
+    setInterval(tick,1000);
+  })();
+
+  (()=>{
+    'use strict';
+    let level=42;
+    let records=[22,24,23,27,29,31,30,32,33,35,36,39,38,42];
+    let lastChange=0;
+    const $=id=>document.getElementById(id);
+    const slider=$('waterSlider'), auto=$('autoFill');
+    function statusFor(n){return n>=80?'danger':n>=60?'warning':'normal'}
+    function setLevel(next, announce=false){
+      const n=Math.min(100,Math.max(0,Math.round(Number(next)||0)));
+      lastChange=n-level;
+      level=n; records.push(n);if(records.length>24)records.shift();
+      $('heroLevel').textContent=n;$('largeLevel').innerHTML=n+'<small>%</small>';
+      $('tankWater').style.height=n+'%'; $('sliderText').textContent=n+'%';$('waterDepth').textContent=(n*.3).toFixed(1);
+      slider.value=String(n);slider.style.background=`linear-gradient(to right,var(--aqua) 0%,var(--aqua) ${n}%,#34474b ${n}%)`;
+      $('heroGauge').style.strokeDashoffset=String(283-(283*n/100));
+      const s=statusFor(n),stat=$('levelStatus'),risk=$('riskVal'),hero=$('heroStatus'),tag=$('heroTag');
+      stat.className='level-status '+(s==='normal'?'':s);risk.style.color=s==='danger'?'var(--danger)':s==='warning'?'var(--warning)':'var(--mint)';
+      const lbl=s==='danger'?'Критический':s==='warning'?'Повышенный':'Низкий';
+      stat.textContent=s==='danger'?'● ОПАСНО':s==='warning'?'● ВНИМАНИЕ':'● НОРМА';risk.textContent=lbl;
+      hero.textContent=s==='danger'?'Срочно проверьте':s==='warning'?'Уровень растёт':'Всё в норме';hero.style.color=risk.style.color;
+      tag.textContent=s==='danger'?'ВЫСОКИЙ РИСК':s==='warning'?'НАБЛЮДЕНИЕ':'НИЗКИЙ РИСК';tag.style.color=risk.style.color;
+      $('trendVal').textContent=lastChange>0?`+${lastChange}%`:(lastChange<0?`${lastChange}%`:'Без изменений');
+      const box=$('alertBox');box.className='notification'+(s==='normal'?'':' '+(s==='warning'?'warn':'danger'));
+      const titles={normal:'Система работает нормально',warning:'Внимание · уровень воды повышен',danger:'Достигнут критический уровень'};
+      const desc={normal:'Уровень воды ниже порога предупреждения. Это демонстрационные данные.',warning:'Уровень превысил 60%. Следите за динамикой: опасный порог 80% приближается.',danger:'Уровень достиг 80% или выше. В настоящей системе ответственным службам отправлялось бы оповещение.'};
+      $('alertTitle').textContent=titles[s];$('alertDescription').textContent=desc[s];
+      $('heroForecast').innerHTML=lastChange>0&&n<80?`${Math.ceil((80-n)/lastChange)}<small> шагов до 80% (демо)</small>`:s==='danger'?'Тревога<small> порог достигнут</small>':'Стабильно<small> без угрозы</small>';
+      drawChart();
+      if(announce&&s==='danger')showToast('⚠ Внимание: уровень воды достиг критической отметки (симуляция).');
+    }
+    function drawChart(){
+      const svgWidth=700,left=43,right=17,top=16,bottom=25,plotW=svgWidth-left-right,plotH=210-top-bottom;
+      const X=i=>left+(i/(records.length-1))*plotW;
+      const Y=v=>top+(1-v/100)*plotH;
+      let grid='';
+      for(let v=0;v<=100;v+=25){const y=Y(v);grid+=`<line class="chart-grid" x1="${left}" y1="${y}" x2="${svgWidth-right}" y2="${y}"/><text class="chart-axis" x="${left-10}" y="${y+4}" text-anchor="end">${v}</text>`}
+      const threshold=Y(80);grid+=`<line class="threshold-line" x1="${left}" y1="${threshold}" x2="${svgWidth-right}" y2="${threshold}"/>`;
+      const labels=['НАЧАЛО','НЕДАВНО','СЕЙЧАС'];for(let i=0;i<labels.length;i++)grid+=`<text class="chart-axis" x="${left+(plotW*i/2)}" y="207" text-anchor="${i===0?'start':i===2?'end':'middle'}">${labels[i]}</text>`;
+      $('chartGrid').innerHTML=grid;
+      const path=records.map((n,i)=>(i===0?'M':'L')+X(i).toFixed(1)+','+Y(n).toFixed(1)).join(' ');
+      $('chartLine').setAttribute('d',path);
+      $('chartFill').setAttribute('d',path+` L${X(records.length-1).toFixed(1)},${Y(0)} L${X(0).toFixed(1)},${Y(0)} Z`);
+      $('chartPoint').setAttribute('cx',X(records.length-1));$('chartPoint').setAttribute('cy',Y(records.at(-1)));
+    }
+    function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('active');clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>t.classList.remove('active'),2700)}
+    slider.addEventListener('input',e=>setLevel(e.target.value));
+    $('addWater').addEventListener('click',()=>setLevel(level+10,true));
+    $('drainWater').addEventListener('click',()=>setLevel(level-10));
+    let timer;
+    auto.addEventListener('change',()=>{
+      clearInterval(timer);
+      if(auto.checked){showToast('Автозаполнение запущено.');timer=setInterval(()=>{if(level>=100){auto.checked=false;clearInterval(timer);showToast('Резервуар заполнен на 100%.');return}setLevel(level+1,true)},650)}
+      else showToast('Автозаполнение остановлено.');
+    });
+    const menu=$('menuButton'),nav=$('mobileNav');
+    menu.addEventListener('click',()=>{const open=nav.classList.toggle('active');menu.setAttribute('aria-expanded',String(open));menu.textContent=open?'✕':'☰'});
+    nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('active');menu.setAttribute('aria-expanded','false');menu.textContent='☰'}));
+    setLevel(42);
+  })();
+</script>
+
+<script>
+(()=>{
+  'use strict';
+  const byId=id=>document.getElementById(id);
+  const connect=byId('liveConnect'), disconnect=byId('liveDisconnect');
+  const pill=byId('livePill'), pillText=byId('livePillText'), info=byId('liveInfo');
+  const distance=byId('liveDistance'), percent=byId('livePercent'), risk=byId('liveRisk');
+  const path=byId('liveChartPath'), depthInput=byId('emptyDepth');
+  const speedEl=byId('liveSpeed'), speedHint=byId('liveSpeedHint');
+  const qualityEl=byId('liveQuality'), qualityHint=byId('liveQualityHint');
+  const historyBody=byId('liveHistoryBody'), historyCount=byId('liveHistoryCount');
+  const exportBtn=byId('liveExport'), clearBtn=byId('liveClear');
+  const historyRange=byId('liveHistoryRange'), meter=byId('liveMeterFill');
+  const historyKey='drainiq-live-history-v2';
+  const maxRecords=3600;
+  let port=null,reader=null,active=false,lastReading=0,buffer='';
+  let emptyDepth=0, records=[], recent=[], filteredValue=null, pendingSpike=null;
+  let spikeCount=0, noSignalCount=0, lastSave=0, lastRaw=null;
+   let latestSpeed=null, lastQualityWarning='';
+   const calibrateBtn=byId('liveCalibrate');
+   const calibrationSyncStatus=byId('calibrationSyncStatus');
+   let deviceDepthKnown=false, depthRequested=false, pendingDepth=null, ackTimer=null;
+   function calibrationMessage(message, color){
+     calibrationSyncStatus.textContent=message;
+     calibrationSyncStatus.style.color=color||'#a8c5c0';
+   }
+   function setDepthValue(cm){
+     emptyDepth=cm;
+     depthInput.value=String(Number(cm.toFixed(2)));
+     try{localStorage.setItem('drainiq-empty-depth-cm',String(cm));}catch(e){}
+     if(filteredValue!==null && active && lastReading && Date.now()-lastReading<6000){
+       showMeasurement(filteredValue,lastReading);
+     }
+     historyTable();
+   }
+   async function sendSerialCommand(command){
+     if(!active || !port || !port.writable)throw new Error('ESP32 не подключён через USB');
+     const writer=port.writable.getWriter();
+     try{await writer.write(new TextEncoder().encode(command+'\n'));}
+     finally{writer.releaseLock();}
+   }
+   function requestDeviceDepth(){
+     if(!active)return;
+     sendSerialCommand('GET_DEPTH').catch(()=>{});
+   }
+   function resolveDepthReply(cm){
+     if(!Number.isFinite(cm)||cm<2||cm>400)return;
+     deviceDepthKnown=true;
+     if(pendingDepth!==null && Math.abs(cm-pendingDepth)>0.051){
+       calibrationMessage('Ожидание подтверждения новой высоты от ESP32…','#f5cd79');
+       return;
+     }
+     if(ackTimer!==null){clearTimeout(ackTimer);ackTimer=null;}
+     pendingDepth=null;
+     calibrateBtn.disabled=false;
+     setDepthValue(cm);
+     calibrationMessage('✓ Синхронизировано: сайт и Telegram используют '+cm.toFixed(2)+' см.','#a8f6ba');
+   }
+
+  try{
+    const saved=Number(localStorage.getItem('drainiq-empty-depth-cm'));
+    if(saved>=2 && saved<=400){emptyDepth=saved;depthInput.value=String(saved);}
+  }catch(e){}
+
+  function loadHistory(){
+    try{
+      const saved=JSON.parse(localStorage.getItem(historyKey)||'[]');
+      if(Array.isArray(saved)){
+        records=saved.filter(r=>Array.isArray(r)&&r.length>=3&&
+          Number.isFinite(r[0])&&Number.isFinite(r[1])&&
+          Number.isFinite(r[2])&&r[1]>=2&&r[1]<=400&&r[2]>=2&&r[2]<=400)
+          .slice(-maxRecords);
+      }
+    }catch(e){records=[];}
+  }
+  function saveHistory(force=false){
+    if(!force && Date.now()-lastSave<6000)return;
+    try{localStorage.setItem(historyKey,JSON.stringify(records));lastSave=Date.now();}
+    catch(e){note('Не получилось сохранить историю браузера. CSV всё ещё можно скачать.','warning');}
+  }
+  function note(message,kind=''){
+    info.textContent=message;
+    info.className='live-alert '+kind;
+  }
+  function setRisk(label,color){risk.textContent=label;risk.style.color=color;}
+  function viewState(connected){
+    pill.classList.toggle('connected',connected);
+    pillText.textContent=connected?'USB · СОЕДИНЕНО':'НЕ ПОДКЛЮЧЕНО';
+    connect.disabled=connected;disconnect.disabled=!connected;
+    connect.textContent=connected?'✓ ESP32 подключён':'◉ Подключить ESP32';
+  }
+  function clamp(num,min,max){return Math.max(min,Math.min(max,num));}
+  function fillingFor(d){return emptyDepth>0?clamp((emptyDepth-d)/emptyDepth*100,0,100):null;}
+  function statusFor(d){
+    if(emptyDepth>0){
+      const f=fillingFor(d);
+      if(f>=80)return {label:'● ОПАСНО',name:'Опасно',color:'var(--danger)',kind:'danger'};
+      if(f>=60)return {label:'● ВНИМАНИЕ',name:'Внимание',color:'var(--warning)',kind:'warning'};
+      return {label:'● НОРМА',name:'Норма',color:'var(--mint)',kind:'success'};
+    }
+    if(d<=4)return {label:'● ОПАСНО*',name:'Опасно*',color:'var(--danger)',kind:'danger'};
+    if(d<=6)return {label:'● ВНИМАНИЕ*',name:'Внимание*',color:'var(--warning)',kind:'warning'};
+    return {label:'● НОРМА*',name:'Норма*',color:'var(--mint)',kind:'success'};
+  }
+  function median(values){
+    const v=values.slice().sort((a,b)=>a-b);
+    const n=v.length;return n%2?v[(n-1)/2]:(v[n/2-1]+v[n/2])/2;
+  }
+  function filterSample(raw,now){
+    if(filteredValue!==null && Math.abs(raw-filteredValue)>2.5){
+      if(pendingSpike && now-pendingSpike.time<6000 &&
+         Math.abs(raw-pendingSpike.value)<=1.5){
+        recent=[pendingSpike.value,raw];
+        pendingSpike=null;
+        filteredValue=median(recent);
+        lastQualityWarning='Подтверждён быстрый переход уровня двумя измерениями.';
+        return filteredValue;
+      }
+      pendingSpike={value:raw,time:now};
+      spikeCount++;
+      lastQualityWarning='Одиночный скачок '+raw.toFixed(2)+' см проверяется повторным измерением.';
+      return null;
+    }
+    pendingSpike=null;
+    recent.push(raw);
+    if(recent.length>5)recent.shift();
+    filteredValue=median(recent);
+    lastQualityWarning='';
+    return filteredValue;
+  }
+  function chart(){
+    const now=Date.now();
+    const span=historyRange.value;
+    let visible=span==='all'?records:records.filter(r=>r[0]>=now-Number(span));
+    if(visible.length>500){
+      const step=Math.ceil(visible.length/500);
+      visible=visible.filter((v,i)=>i%step===0 || i===visible.length-1);
+    }
+    if(visible.length<2){
+      path.setAttribute('d','');
+      byId('liveChartStart').textContent=visible.length?time(visible[0][0]):'—';
+      byId('liveChartEnd').textContent=visible.length?time(visible.at(-1)[0]):'—';
+      byId('liveChartRangeLabel').textContent='Нужно хотя бы 2 измерения';
+      return;
+    }
+    const values=visible.map(r=>r[2]);
+    const lo=Math.max(0,Math.min(...values)-0.7);
+    const hi=Math.max(lo+1.5,Math.max(...values)+0.7);
+    const t0=visible[0][0],t1=visible.at(-1)[0];
+    const range=Math.max(1,t1-t0);
+    const d=visible.map((r,i)=>
+      (i?'L':'M')+(8+(r[0]-t0)/range*564).toFixed(1)+','+
+      (13+(hi-r[2])/(hi-lo)*116).toFixed(1)).join(' ');
+    path.setAttribute('d',d);
+    byId('liveChartStart').textContent=time(t0);
+    byId('liveChartEnd').textContent=time(t1);
+    byId('liveChartRangeLabel').textContent=visible.length+' точек · '+lo.toFixed(1)+'–'+hi.toFixed(1)+' см';
+  }
+  function time(ms){return new Date(ms).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+  function speedFromHistory(){
+    const list=records.filter(r=>r[0]>=Date.now()-30000);
+    if(list.length<5 || list.at(-1)[0]-list[0][0]<10000)return null;
+    const t0=list[0][0];
+    let sumX=0,sumY=0,sumXX=0,sumXY=0;
+    for(const r of list){
+      const x=(r[0]-t0)/1000,y=r[2];
+      sumX+=x;sumY+=y;sumXX+=x*x;sumXY+=x*y;
+    }
+    const n=list.length,den=n*sumXX-sumX*sumX;
+    if(Math.abs(den)<0.00001)return null;
+    const rise=-60*(n*sumXY-sumX*sumY)/den;
+    return Math.abs(rise)<0.2?0:rise;
+  }
+  function showSpeed(){
+    latestSpeed=speedFromHistory();
+    if(latestSpeed===null){
+      speedEl.textContent='— см/мин';
+      speedEl.style.color='#dbe8e2';
+      speedHint.textContent='Нужно минимум 10 секунд новых показаний';
+    }else{
+      speedEl.textContent=(latestSpeed>0?'+':'')+latestSpeed.toFixed(1)+' см/мин';
+      speedEl.style.color=latestSpeed>0?'var(--warning)':latestSpeed<0?'var(--mint)':'#dbe8e2';
+      speedHint.textContent=latestSpeed>0?'Вода поднимается':latestSpeed<0?'Вода опускается':'Уровень стабилен';
+    }
+  }
+  function historyTable(){
+    historyCount.textContent=records.length+' записей';
+    exportBtn.disabled=records.length===0;
+    clearBtn.disabled=records.length===0;
+    historyBody.replaceChildren();
+    if(!records.length){
+      const tr=document.createElement('tr'),td=document.createElement('td');
+      td.colSpan=5;td.className='empty-data';td.textContent='История пока пуста. Подключи ESP32.';
+      tr.append(td);historyBody.append(tr);return;
+    }
+    for(const r of records.slice(-8).reverse()){
+      const tr=document.createElement('tr');
+      const f=fillingFor(r[2]),s=statusFor(r[2]);
+      const data=[time(r[0]),r[1].toFixed(2)+' см',r[2].toFixed(2)+' см',
+        f===null?'—':f.toFixed(1)+' %',s.name];
+      for(let i=0;i<data.length;i++){
+        const td=document.createElement('td');td.textContent=data[i];
+        if(i===4)td.style.color=s.color;
+        tr.append(td);
+      }
+      historyBody.append(tr);
+    }
+  }
+  function showMeasurement(value,now){
+    distance.textContent=value.toFixed(2);
+    const fill=fillingFor(value);
+    percent.textContent=fill===null?'— %':fill.toFixed(1)+' %';
+    meter.style.width=(fill===null?0:fill)+'%';
+    const s=statusFor(value);
+    meter.style.background=s.color;
+    setRisk(s.label,s.color);
+    byId('liveLastUpdate').textContent='Последнее измерение: '+time(now);
+    qualityEl.textContent='СТАБИЛЬНО';qualityEl.style.color='var(--mint)';
+    qualityHint.textContent=spikeCount+' всплесков проверено · '+noSignalCount+' пропусков';
+    if(s.kind==='danger')note(deviceDepthKnown?'Опасный уровень по общим порогам сайта и Telegram.':'Опасный уровень по порогу сайта. Для синхронизации Telegram подключи обновлённую прошивку.','danger');
+    else if(s.kind==='warning')note('Уровень повышен: следим за изменениями.','warning');
+    else note('Данные обновляются. Измерения прошли фильтрацию.','success');
+  }
+
+  /* DRAINIQ AI v0.1 — exported sklearn Isolation Forest; no model training in the browser. */
+  const aiModel={"type":"sklearn.IsolationForest","version":"DRAINIQ AI v0.1","feature_names":["rise_8s_cm","rise_15s_cm"],"features_note":"Filtered sensor distance at t-8 or t-15 seconds minus current filtered distance, using nearest past observation. Start predicting after 10 seconds.","train_sessions":["stable_01"],"test_sessions":["stable_02","slow_rise","fast_rise"],"threshold_offset":-0.6649191318276693,"max_samples":53,"average_path_length_max_samples":7.094654616022526,"trees":[{"left":[1,2,3,4,-1,-1,-1,8,-1,10,11,-1,-1,-1,15,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[14,7,6,5,-1,-1,-1,9,-1,13,12,-1,-1,-1,16,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,1,1,0,-2,-2,-2,0,-2,0,0,-2,-2,-2,1,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[0.006504910923043214,-0.01233997504227849,-0.07013808199367955,-0.007200487331290304,-2.0,-2.0,-2.0,-0.06030646926052677,-2.0,0.04501693023564491,0.004224004885867129,-2.0,-2.0,-2.0,0.05999908510060509,-2.0,0.0543638441218095,0.08649606793798145,-2.0,-2.0,0.0886726044814613,0.088196072612523,-2.0,-2.0,-2.0],"samples":[53,42,6,3,2,1,3,36,1,35,33,32,1,2,11,1,10,4,2,2,6,5,2,3,1]},{"left":[1,2,3,-1,-1,6,7,-1,-1,10,-1,12,-1,14,-1,-1,17,-1,19,20,-1,-1,23,-1,-1],"right":[16,5,4,-1,-1,9,8,-1,-1,11,-1,13,-1,15,-1,-1,18,-1,22,21,-1,-1,24,-1,-1],"feature":[0,0,1,-2,-2,0,0,-2,-2,1,-2,1,-2,1,-2,-2,0,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.01779120706491598,-0.04992191995199291,0.013383607641314356,-2.0,-2.0,-0.007972933028485691,-0.019435187301852824,-2.0,-2.0,-0.06481203435864936,-2.0,0.047673365600975716,-2.0,0.0882837978863068,-2.0,-2.0,0.07833338013462215,-2.0,0.08120700430407798,0.02877978083088541,-2.0,-2.0,0.08311373182112954,-2.0,-2.0],"samples":[53,44,2,1,1,42,5,3,2,37,1,36,32,4,2,2,9,1,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,-1,9,-1,-1,12,13,-1,-1,16,-1,-1,19,20,-1,-1,23,-1,-1],"right":[18,5,4,-1,-1,11,8,-1,10,-1,-1,15,14,-1,-1,17,-1,-1,22,21,-1,-1,24,-1,-1],"feature":[0,1,0,-2,-2,0,1,-2,1,-2,-2,1,0,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.021406212263205465,-0.06734972661935187,-0.008892044202459004,-2.0,-2.0,-0.0008458780684711953,-0.0012093725535829956,-2.0,0.0010466460607981467,-2.0,-2.0,0.029124267567461736,0.00025990940061596126,-2.0,-2.0,0.09646812426543214,-2.0,-2.0,0.09441670465706686,0.01144212481669156,-2.0,-2.0,0.08943747989433377,-2.0,-2.0],"samples":[53,45,3,2,1,42,5,3,2,1,1,37,33,32,1,4,2,2,8,4,2,2,4,3,1]},{"left":[1,2,-1,4,-1,-1,7,8,-1,-1,11,12,13,-1,-1,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[6,3,-1,5,-1,-1,10,9,-1,-1,16,15,14,-1,-1,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[0,1,-2,1,-2,-2,1,0,-2,-2,1,0,0,-2,-2,-2,0,0,1,-2,-2,-2,1,-2,-2],"threshold":[-0.01760072080393546,-0.006638538734050781,-2.0,0.004656363418861718,-2.0,-2.0,-0.06140080537997711,-0.0006398094491702287,-2.0,-2.0,0.07961427389051347,0.04811788151900261,0.003994146134832468,-2.0,-2.0,-2.0,0.09110545609448106,0.005970106292238923,0.08586418239868092,-2.0,-2.0,-2.0,0.08716053780452242,-2.0,-2.0],"samples":[53,5,3,2,1,1,48,3,2,1,45,35,33,32,1,2,10,6,4,2,2,2,4,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,9,10,-1,-1,13,-1,-1,16,-1,-1,19,20,-1,-1,23,-1,-1],"right":[6,5,4,-1,-1,-1,18,15,12,11,-1,-1,14,-1,-1,17,-1,-1,22,21,-1,-1,24,-1,-1],"feature":[1,0,1,-2,-2,-2,0,1,0,1,-2,-2,0,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.018515632942843585,-0.006150100934759364,-0.07809455565621881,-2.0,-2.0,-2.0,0.07616353086238514,0.05795176551323767,-0.05559038349764976,0.011342660713426272,-2.0,-2.0,0.004367092463535559,-2.0,-2.0,0.09991419604500322,-2.0,-2.0,0.08524288993828952,0.06740439915656725,-2.0,-2.0,0.081427016060497,-2.0,-2.0],"samples":[53,6,5,2,3,1,47,39,35,2,1,1,33,32,1,4,2,2,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,-1,9,-1,-1,12,13,-1,-1,-1,17,18,-1,-1,21,-1,23,-1,-1],"right":[16,5,4,-1,-1,11,8,-1,10,-1,-1,15,14,-1,-1,-1,20,19,-1,-1,22,-1,24,-1,-1],"feature":[1,0,0,-2,-2,1,0,-2,0,-2,-2,0,0,-2,-2,-2,0,1,-2,-2,0,-2,1,-2,-2],"threshold":[0.04333014188558933,-0.06138617027311117,-0.07067726421042483,-2.0,-2.0,-0.0006683858337746401,-0.017590899464314667,-2.0,-0.0011680852552410168,-2.0,-2.0,0.06153557840167906,0.0025839293555148493,-2.0,-2.0,-2.0,0.01953869482724784,0.08610559485632706,-2.0,-2.0,0.09795557095590798,-2.0,0.0832842781100295,-2.0,-2.0],"samples":[53,43,2,1,1,41,6,3,3,2,1,35,33,32,1,2,10,4,2,2,6,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,-1,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,16,11,-1,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[0,1,-2,-2,1,0,-2,-2,1,0,-2,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.06507264449174874,0.014732938035182606,-2.0,-2.0,-0.07020721270936821,-0.0037509363813819302,-2.0,-2.0,0.06740084191732258,-0.0017933958935134088,-2.0,0.05114906087331198,0.010097639796049763,-2.0,-2.0,-2.0,0.05950972492053215,0.08271331803770816,-2.0,-2.0,0.08726489012894029,0.08696450334902384,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,3,2,1,48,38,3,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,4,-1,-1,7,8,-1,-1,11,12,13,-1,15,-1,-1,18,19,-1,-1,-1,23,-1,-1],"right":[6,3,-1,5,-1,-1,10,9,-1,-1,22,17,14,-1,16,-1,-1,21,20,-1,-1,-1,24,-1,-1],"feature":[1,0,-2,0,-2,-2,0,1,-2,-2,0,1,0,-2,0,-2,-2,0,1,-2,-2,-2,1,-2,-2],"threshold":[-0.012530437760251673,-0.012429661758153646,-2.0,-0.0018752287430056584,-2.0,-2.0,-0.0026241638035225945,0.008466667440750926,-2.0,-2.0,0.09862732317051925,0.004309052341710183,0.007905948063554444,-2.0,0.03478971144411877,-2.0,-2.0,0.0767669223211494,0.09851074004279953,-2.0,-2.0,-2.0,0.08707618234159235,-2.0,-2.0],"samples":[53,6,3,3,2,1,47,2,1,1,45,41,35,32,3,1,2,6,4,2,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,9,10,-1,-1,13,-1,-1,-1,17,18,19,-1,21,-1,-1,-1,-1],"right":[4,3,-1,-1,16,7,-1,15,12,11,-1,-1,14,-1,-1,-1,24,23,20,-1,22,-1,-1,-1,-1],"feature":[1,0,-2,-2,1,1,-2,0,0,0,-2,-2,0,-2,-2,-2,1,1,0,-2,0,-2,-2,-2,-2],"threshold":[-0.06846798205257892,-0.008836643670069862,-2.0,-2.0,0.07713678307382238,-0.00576053455902956,-2.0,0.0658895492661703,-0.03664127934624434,-0.07096301576100848,-2.0,-2.0,0.01942938048710073,-2.0,-2.0,-2.0,0.0948600102242005,0.08794898361674289,0.006214833867312183,-2.0,0.09042519112121895,-2.0,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,40,3,37,35,2,1,1,33,32,1,2,10,8,7,2,5,2,3,1,2]},{"left":[1,2,3,4,5,-1,-1,-1,9,10,-1,-1,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[16,15,8,7,6,-1,-1,-1,12,11,-1,-1,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,0,1,0,0,-2,-2,-2,0,1,-2,-2,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[0.055724943211836464,0.053309365722564866,-0.017965449693437593,-0.0035507785403697777,-0.017558375333788033,-2.0,-2.0,-2.0,-0.026985144844138137,0.017793626805627495,-2.0,-2.0,0.007138014083967232,-2.0,-2.0,-2.0,0.08548035330817337,0.027475393892586224,-2.0,0.08261018474651301,-2.0,-2.0,0.06745100073790317,-2.0,-2.0],"samples":[53,43,41,6,5,3,2,1,35,2,1,1,33,32,1,2,10,7,2,5,2,3,3,2,1]},{"left":[1,2,-1,-1,5,6,7,-1,-1,-1,11,12,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,10,9,8,-1,-1,-1,16,15,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,0,1,0,-2,-2,-2,1,0,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[-0.07994368221617486,-0.0067317679261820855,-2.0,-2.0,-0.013405004530300954,0.02734234385421025,-0.04586424812878496,-2.0,-2.0,-2.0,0.02166068875920154,0.023440030039436448,0.008159944311009071,-2.0,-2.0,-2.0,0.08055320698548232,0.0010641039978318994,-2.0,0.08083200950813477,-2.0,-2.0,0.06699099722816743,-2.0,-2.0],"samples":[53,3,2,1,50,5,4,1,3,1,45,35,33,32,1,2,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,4,-1,-1,-1,-1,9,-1,11,12,13,-1,-1,-1,17,18,-1,-1,21,-1,23,-1,-1],"right":[8,7,6,5,-1,-1,-1,-1,10,-1,16,15,14,-1,-1,-1,20,19,-1,-1,22,-1,24,-1,-1],"feature":[0,0,0,1,-2,-2,-2,-2,1,-2,1,0,0,-2,-2,-2,0,1,-2,-2,0,-2,1,-2,-2],"threshold":[-0.0026588304329894646,-0.01902010374984476,-0.05825831729073963,0.02308110470193813,-2.0,-2.0,-2.0,-2.0,-0.056982203907716675,-2.0,0.044855289571091785,0.05992393358777047,0.007685277591828231,-2.0,-2.0,-2.0,0.0286901667466273,0.0974824584514403,-2.0,-2.0,0.08247345579468197,-2.0,0.08377342142665509,-2.0,-2.0],"samples":[53,7,5,2,1,1,3,2,46,1,45,35,33,32,1,2,10,4,2,2,6,2,4,3,1]},{"left":[1,2,3,-1,-1,6,-1,-1,9,10,11,12,-1,14,-1,-1,-1,18,-1,20,21,-1,-1,-1,-1],"right":[8,5,4,-1,-1,7,-1,-1,24,17,16,13,-1,15,-1,-1,-1,19,-1,23,22,-1,-1,-1,-1],"feature":[0,1,0,-2,-2,1,-2,-2,1,0,0,1,-2,1,-2,-2,-2,1,-2,1,0,-2,-2,-2,-2],"threshold":[-0.007008407770904751,-0.016934645210426147,-0.012883777145511685,-2.0,-2.0,0.00882751166127014,-2.0,-2.0,0.09056039979873384,0.03448459228407197,0.0005004411267485779,-0.06178550305593819,-2.0,0.048012959427847925,-2.0,-2.0,-2.0,0.06741005080739695,-2.0,0.08466243731127558,0.09677792345295039,-2.0,-2.0,-2.0,-2.0],"samples":[53,7,5,3,2,2,1,1,46,44,36,35,1,34,32,2,1,8,2,6,5,2,3,1,2]},{"left":[1,2,-1,-1,5,6,7,8,-1,-1,11,12,-1,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,16,15,10,9,-1,-1,14,13,-1,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[0,0,-2,-2,1,0,0,0,-2,-2,0,1,-2,-2,-2,-2,1,0,-2,0,-2,-2,1,-2,-2],"threshold":[-0.04530760989927609,-0.07954166701290481,-2.0,-2.0,0.029966024253040416,0.03729175608944494,-0.003500690951695442,-0.011290529039383457,-2.0,-2.0,0.006671172988812841,-0.046725391393483875,-2.0,-2.0,-2.0,-2.0,0.08012468199432518,0.028211978651115337,-2.0,0.08034466100002916,-2.0,-2.0,0.09405175462778048,-2.0,-2.0],"samples":[53,2,1,1,51,41,39,5,3,2,34,33,1,32,1,2,10,7,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,-1,12,-1,14,-1,-1,17,18,19,20,-1,-1,-1,-1,-1],"right":[4,3,-1,-1,16,9,8,-1,-1,11,-1,13,-1,15,-1,-1,24,23,22,21,-1,-1,-1,-1,-1],"feature":[0,0,-2,-2,1,1,0,-2,-2,0,-2,0,-2,0,-2,-2,1,1,0,0,-2,-2,-2,-2,-2],"threshold":[-0.06136256797594437,-0.07501823459605164,-2.0,-2.0,0.07928055126823005,-0.050974329637459695,-0.00022215015700037533,-2.0,-2.0,-0.011506024095796447,-2.0,0.003854922977657344,-2.0,0.04012284898861593,-2.0,-2.0,0.09756031918283192,0.08100577746502256,0.09406297076683398,0.011587771370715804,-2.0,-2.0,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,41,3,2,1,38,3,35,32,3,1,2,10,8,7,4,2,2,3,1,2]},{"left":[1,2,3,-1,5,6,-1,-1,9,-1,11,-1,-1,14,-1,-1,17,18,-1,-1,21,-1,-1],"right":[16,13,4,-1,8,7,-1,-1,10,-1,12,-1,-1,15,-1,-1,20,19,-1,-1,22,-1,-1],"feature":[0,1,0,-2,1,0,-2,-2,0,-2,0,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.039008742075351335,0.04548347292436286,-0.07485188205817783,-2.0,-0.04246141418084199,-0.008160219800877227,-2.0,-2.0,-0.05124196520444807,-2.0,0.008018891142267785,-2.0,-2.0,0.0964952167881705,-2.0,-2.0,0.08706131602294966,0.02779918527856388,-2.0,-2.0,0.08570835797196966,-2.0,-2.0],"samples":[53,45,41,1,40,3,2,1,37,1,36,35,1,4,2,2,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,9,10,11,-1,-1,14,-1,-1,-1,18,19,-1,-1,-1,23,-1,-1],"right":[6,5,4,-1,-1,-1,22,17,16,13,12,-1,-1,15,-1,-1,-1,21,20,-1,-1,-1,24,-1,-1],"feature":[0,1,0,-2,-2,-2,1,0,1,1,0,-2,-2,0,-2,-2,-2,0,1,-2,-2,-2,0,-2,-2],"threshold":[-0.010750165282269838,0.020334509412887523,-0.0653017637556498,-2.0,-2.0,-2.0,0.08854088458664922,0.06978902856481917,0.01979343933505394,-0.026599881960919836,-0.0009418284640340426,-2.0,-2.0,0.01754779236170172,-2.0,-2.0,-2.0,0.08013973867955076,0.020624811235179123,-2.0,-2.0,-2.0,0.01695426635420452,-2.0,-2.0],"samples":[53,5,4,1,3,1,48,45,38,36,3,2,1,33,32,1,2,7,4,2,2,3,3,2,1]},{"left":[1,2,-1,-1,5,6,7,-1,9,-1,11,-1,-1,14,-1,16,17,-1,-1,-1,21,-1,-1],"right":[4,3,-1,-1,20,13,8,-1,10,-1,12,-1,-1,15,-1,19,18,-1,-1,-1,22,-1,-1],"feature":[1,0,-2,-2,1,1,0,-2,1,-2,0,-2,-2,1,-2,0,0,-2,-2,-2,1,-2,-2],"threshold":[-0.03937686263761236,-0.004657935472706811,-2.0,-2.0,0.08916764748607003,0.025639039350191656,-0.053807230419972964,-2.0,-0.0034218492261940056,-2.0,0.07016789416880762,-2.0,-2.0,0.06008427407873751,-2.0,0.0896333360848483,0.0028071648758199287,-2.0,-2.0,-2.0,0.09694697330459202,-2.0,-2.0],"samples":[53,3,2,1,50,47,39,1,38,3,35,33,2,8,1,7,4,2,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,7,-1,-1,-1,11,12,13,-1,15,-1,-1,-1,19,20,21,-1,-1,-1,-1],"right":[4,3,-1,-1,10,9,8,-1,-1,-1,18,17,14,-1,16,-1,-1,-1,24,23,22,-1,-1,-1,-1],"feature":[0,0,-2,-2,1,1,0,-2,-2,-2,0,0,1,-2,1,-2,-2,-2,1,0,1,-2,-2,-2,-2],"threshold":[-0.04970200292646336,-0.07485275724940803,-2.0,-2.0,-0.015389355982242198,-0.05398881322821869,-0.0030197392488234918,-2.0,-2.0,-2.0,0.07850677417159244,5.950685460268416e-05,0.026979696140778234,-2.0,0.0993124706751209,-2.0,-2.0,-2.0,0.0858472649201193,0.08046208278421119,0.011630272685260127,-2.0,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,6,3,2,1,3,45,37,36,32,4,2,2,1,8,7,4,2,2,3,1]},{"left":[1,2,3,4,-1,-1,7,8,-1,-1,11,12,-1,-1,-1,16,-1,18,-1,20,-1,-1,23,-1,-1],"right":[22,15,6,5,-1,-1,10,9,-1,-1,14,13,-1,-1,-1,17,-1,19,-1,21,-1,-1,24,-1,-1],"feature":[1,1,1,0,-2,-2,0,1,-2,-2,0,0,-2,-2,-2,1,-2,0,-2,0,-2,-2,0,-2,-2],"threshold":[0.08935220084488904,0.0021828158094583383,-0.05855187120291497,-0.0003398112226412047,-2.0,-2.0,-0.007474996395723507,-0.00971337550481378,-2.0,-2.0,0.051856822763909245,0.01771321830687985,-2.0,-2.0,-2.0,0.05229287827491512,-2.0,0.03382673669433328,-2.0,0.08684598694398703,-2.0,-2.0,0.09800994928662118,-2.0,-2.0],"samples":[53,50,42,3,2,1,39,4,3,1,35,33,32,1,2,8,1,7,2,5,2,3,3,2,1]},{"left":[1,2,3,-1,-1,6,-1,8,9,10,-1,-1,13,-1,-1,16,-1,-1,19,-1,21,22,-1,-1,-1],"right":[18,5,4,-1,-1,7,-1,15,12,11,-1,-1,14,-1,-1,17,-1,-1,20,-1,24,23,-1,-1,-1],"feature":[0,1,0,-2,-2,0,-2,1,0,1,-2,-2,0,-2,-2,1,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.036212760630534885,-0.03554631830826581,-0.003884377478358454,-2.0,-2.0,-0.07863373042280533,-2.0,0.07087377646341186,-0.0012105624684110305,0.006080979632304029,-2.0,-2.0,0.011764237716365986,-2.0,-2.0,0.09198908137723136,-2.0,-2.0,0.0616644363308773,-2.0,0.0867459807256766,0.09504322562844418,-2.0,-2.0,-2.0],"samples":[53,45,3,2,1,42,1,41,37,4,3,1,33,32,1,4,2,2,8,2,6,5,2,3,1]},{"left":[1,2,3,4,-1,-1,-1,8,9,-1,-1,12,-1,-1,15,16,-1,18,-1,-1,21,-1,23,-1,-1],"right":[14,7,6,5,-1,-1,-1,11,10,-1,-1,13,-1,-1,20,17,-1,19,-1,-1,22,-1,24,-1,-1],"feature":[1,1,1,0,-2,-2,-2,0,0,-2,-2,0,-2,-2,0,0,-2,1,-2,-2,0,-2,1,-2,-2],"threshold":[0.003101002866230343,-0.012371616428035317,-0.04485310561577975,-0.008384948776060434,-2.0,-2.0,-2.0,0.0021290353592184064,-0.02797481561321003,-2.0,-2.0,0.07787263918667374,-2.0,-2.0,0.03688349591623667,-0.024320651193466457,-2.0,0.08492531567748486,-2.0,-2.0,0.09561379034615482,-2.0,0.08506766065629742,-2.0,-2.0],"samples":[53,42,6,3,2,1,3,36,33,1,32,3,1,2,11,5,1,4,2,2,6,2,4,3,1]},{"left":[1,2,-1,-1,5,6,7,8,-1,-1,11,12,-1,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,16,15,10,9,-1,-1,14,13,-1,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,0,-2,-2,0,1,0,1,-2,-2,1,0,-2,-2,-2,-2,1,0,-2,-2,1,0,-2,-2,-2],"threshold":[-0.05202134862146386,-0.0076701446480598266,-2.0,-2.0,0.01885020286188592,0.08231096832645855,-0.03160097406932813,0.011653318331713802,-2.0,-2.0,0.039268875734118185,-0.0038011642458593807,-2.0,-2.0,-2.0,-2.0,0.07161987848262423,0.02832919649245578,-2.0,-2.0,0.0841382684425558,0.0860678942045043,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,41,39,2,1,1,37,35,3,32,2,2,9,3,1,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,-1,12,13,-1,-1,-1,17,18,-1,20,-1,22,-1,-1,-1],"right":[4,3,-1,-1,16,9,8,-1,-1,11,-1,15,14,-1,-1,-1,24,19,-1,21,-1,23,-1,-1,-1],"feature":[0,0,-2,-2,1,1,0,-2,-2,1,-2,0,0,-2,-2,-2,1,0,-2,0,-2,1,-2,-2,-2],"threshold":[-0.025229389853761226,-0.07432619211552285,-2.0,-2.0,0.07130615737909857,-0.052325504878862394,-0.005802293032078175,-2.0,-2.0,-0.005652696878799815,-2.0,0.03623531709282662,0.00561356209039808,-2.0,-2.0,-2.0,0.09551532620420208,0.0679943320545428,-2.0,0.0927378241701293,-2.0,0.08683209609585099,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,41,3,2,1,38,3,35,33,32,1,2,10,8,2,6,2,4,3,1,2]},{"left":[1,2,-1,-1,5,6,-1,8,-1,10,11,-1,-1,-1,15,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,14,7,-1,9,-1,13,12,-1,-1,-1,16,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,1,1,-2,0,-2,0,0,-2,-2,-2,0,-2,1,0,-2,0,-2,-2,1,-2,-2],"threshold":[-0.05373703342262491,-0.003947590191132974,-2.0,-2.0,0.02549957033937092,-0.013433194788470786,-2.0,-0.0760383754345571,-2.0,0.05668878915516047,0.017393321247079353,-2.0,-2.0,-2.0,-0.04000634725787801,-2.0,0.08097791703660287,0.05185295078491203,-2.0,0.08533368795308852,-2.0,-2.0,0.09201979215590018,-2.0,-2.0],"samples":[53,3,2,1,50,39,3,36,1,35,33,32,1,2,11,1,10,7,2,5,2,3,3,1,2]},{"left":[1,2,3,4,-1,-1,7,-1,9,10,-1,-1,-1,14,15,-1,-1,-1,19,-1,21,22,-1,-1,-1],"right":[18,13,6,5,-1,-1,8,-1,12,11,-1,-1,-1,17,16,-1,-1,-1,20,-1,24,23,-1,-1,-1],"feature":[0,1,1,0,-2,-2,1,-2,0,0,-2,-2,-2,1,0,-2,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.06431622430272022,0.028245313495105645,-0.061992583035653706,-0.007366154423817403,-2.0,-2.0,-0.01701717479163444,-2.0,0.001144896254963182,-0.07558114393040824,-2.0,-2.0,-2.0,0.08339316523289178,-0.038469907045455075,-2.0,-2.0,-2.0,0.054574414990651875,-2.0,0.08411868627129346,0.09833466943918628,-2.0,-2.0,-2.0],"samples":[53,45,40,3,2,1,37,3,34,33,1,32,1,5,3,1,2,2,8,2,6,5,2,3,1]},{"left":[1,2,3,4,5,6,-1,-1,-1,10,-1,12,-1,-1,-1,16,17,-1,-1,20,-1,-1,23,-1,-1],"right":[22,15,14,9,8,7,-1,-1,-1,11,-1,13,-1,-1,-1,19,18,-1,-1,21,-1,-1,24,-1,-1],"feature":[1,0,1,0,0,1,-2,-2,-2,0,-2,1,-2,-2,-2,1,0,-2,-2,0,-2,-2,1,-2,-2],"threshold":[0.08364162321286497,0.0020727555780944013,0.0711934816529538,-0.011262505664798528,-0.035695263185688574,0.0024539485735187373,-2.0,-2.0,-2.0,-0.00331918794382278,-2.0,-0.035998194249386356,-2.0,-2.0,-2.0,0.027886219420166527,0.04337559432785354,-2.0,-2.0,0.09534946596173627,-2.0,-2.0,0.09288956780841784,-2.0,-2.0],"samples":[53,50,42,40,5,2,1,1,3,35,2,33,1,32,2,8,3,1,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,-1,7,8,-1,10,-1,12,-1,-1,15,16,-1,18,-1,-1,21,-1,-1],"right":[4,3,-1,-1,6,-1,14,9,-1,11,-1,13,-1,-1,20,17,-1,19,-1,-1,22,-1,-1],"feature":[0,1,-2,-2,0,-2,1,0,-2,1,-2,0,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[-0.021206957022775377,0.012322410387381307,-2.0,-2.0,-0.017931748218519797,-2.0,0.06094294279805035,-0.009621685434962052,-2.0,-0.03857189284037845,-2.0,0.05559724373134295,-2.0,-2.0,0.08111447259476846,0.06131839171215282,-2.0,0.0840130493215317,-2.0,-2.0,0.0966263063664865,-2.0,-2.0],"samples":[53,2,1,1,51,3,48,38,2,36,1,35,33,2,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,-1,5,6,7,-1,-1,-1,-1,-1,13,-1,15,16,17,-1,19,-1,-1,-1,-1],"right":[12,11,4,-1,10,9,8,-1,-1,-1,-1,-1,14,-1,22,21,18,-1,20,-1,-1,-1,-1],"feature":[1,0,0,-2,0,1,0,-2,-2,-2,-2,-2,1,-2,1,1,0,-2,0,-2,-2,-2,-2],"threshold":[0.02243023322812926,0.04521486306325598,-0.06657827768047381,-2.0,0.010631038360456556,-0.011883829460227868,-0.011764258512798621,-2.0,-2.0,-2.0,-2.0,-2.0,0.044577535163080266,-2.0,0.09388823022253118,0.0830328240836255,0.001711468983664399,-2.0,0.08849429522570518,-2.0,-2.0,-2.0,-2.0],"samples":[53,42,40,1,39,38,6,3,3,32,1,2,11,1,10,8,7,2,5,2,3,1,2]},{"left":[1,2,3,4,-1,-1,7,8,9,-1,-1,12,-1,-1,15,-1,-1,18,-1,-1,21,-1,-1],"right":[20,17,6,5,-1,-1,14,11,10,-1,-1,13,-1,-1,16,-1,-1,19,-1,-1,22,-1,-1],"feature":[0,0,0,0,-2,-2,1,1,1,-2,-2,0,-2,-2,1,-2,-2,1,-2,-2,1,-2,-2],"threshold":[0.0961538361431235,0.07305437140466853,-0.06284966380617849,-0.07315450363323871,-2.0,-2.0,0.045142020592555704,-0.005070134439367643,-0.049423739238215705,-2.0,-2.0,0.0030811995990498065,-2.0,-2.0,0.09176162795715714,-2.0,-2.0,0.009624304486279227,-2.0,-2.0,0.08521512721341128,-2.0,-2.0],"samples":[53,49,45,2,1,1,43,39,6,3,3,33,32,1,4,2,2,4,2,2,4,3,1]},{"left":[1,2,-1,4,-1,6,7,-1,-1,10,11,-1,-1,-1,15,16,-1,18,-1,-1,-1],"right":[14,3,-1,5,-1,9,8,-1,-1,13,12,-1,-1,-1,20,17,-1,19,-1,-1,-1],"feature":[0,0,-2,0,-2,0,0,-2,-2,0,1,-2,-2,-2,1,1,-2,0,-2,-2,-2],"threshold":[0.0560220131987651,-0.07935719999028906,-2.0,-0.03572935217878807,-2.0,-0.00918223358152202,-0.016878954850458122,-2.0,-2.0,0.01240088650824424,0.03650229327486451,-2.0,-2.0,-2.0,0.08238817550840113,0.012148980157914534,-2.0,0.08812966151617965,-2.0,-2.0,-2.0],"samples":[53,45,1,44,1,43,5,3,2,38,37,33,4,1,8,7,2,5,2,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,9,10,-1,-1,13,-1,-1,16,-1,18,-1,-1,-1],"right":[4,3,-1,-1,20,7,-1,15,12,11,-1,-1,14,-1,-1,17,-1,19,-1,-1,-1],"feature":[1,0,-2,-2,1,1,-2,0,0,0,-2,-2,1,-2,-2,1,-2,0,-2,-2,-2],"threshold":[-0.07802395750072313,-0.0044622816798615995,-2.0,-2.0,0.09499670268111014,-0.003182275423674028,-2.0,0.021952334996059142,-0.06259241784836925,-0.0786889308579486,-2.0,-2.0,0.02450265324133228,-2.0,-2.0,0.012754133707427808,-2.0,0.0989241382573826,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,48,3,45,37,2,1,1,35,33,2,8,2,6,2,4,2]},{"left":[1,2,3,4,-1,-1,7,-1,9,-1,11,-1,-1,-1,15,16,-1,18,-1,-1,21,-1,-1],"right":[14,13,6,5,-1,-1,8,-1,10,-1,12,-1,-1,-1,20,17,-1,19,-1,-1,22,-1,-1],"feature":[1,1,1,0,-2,-2,1,-2,0,-2,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[0.0788810292789576,0.000978541422639298,-0.03168063530279794,-0.00049471983069003,-2.0,-2.0,-0.0009404166861439189,-2.0,-0.027840063744931004,-2.0,0.026392618175385015,-2.0,-2.0,-2.0,0.0891605286736352,0.041866804976763455,-2.0,0.09297041126459607,-2.0,-2.0,0.007511883344451034,-2.0,-2.0],"samples":[53,43,42,3,2,1,39,3,36,1,35,33,2,1,10,7,2,5,2,3,3,2,1]},{"left":[1,2,-1,4,5,-1,-1,8,-1,10,-1,12,-1,-1,15,16,-1,18,-1,-1,21,-1,23,-1,-1],"right":[14,3,-1,7,6,-1,-1,9,-1,11,-1,13,-1,-1,20,17,-1,19,-1,-1,22,-1,24,-1,-1],"feature":[1,0,-2,1,0,-2,-2,1,-2,0,-2,0,-2,-2,0,0,-2,1,-2,-2,0,-2,1,-2,-2],"threshold":[0.009009948881589874,-0.020462033487057503,-2.0,-0.045862019622924285,-0.0021614705111882102,-2.0,-2.0,-0.008614543273633559,-2.0,0.006035564968515392,-2.0,0.027951057584164787,-2.0,-2.0,0.020570554824732037,-0.05380451519309148,-2.0,0.08260076981879409,-2.0,-2.0,0.08050252862153258,-2.0,0.0821769345132663,-2.0,-2.0],"samples":[53,42,1,41,3,2,1,38,3,35,32,3,1,2,11,5,1,4,2,2,6,2,4,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,9,10,-1,-1,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[6,5,4,-1,-1,-1,16,15,12,11,-1,-1,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,1,0,-2,-2,-2,1,1,0,0,-2,-2,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[-0.0005918958610537511,-0.06482478195486366,-0.006483521841128574,-2.0,-2.0,-2.0,0.05721629224165231,0.027858136357119104,0.013004880672679561,-0.05871782617655681,-2.0,-2.0,0.023128414560558502,-2.0,-2.0,-2.0,0.08111570749145249,0.06697307490283223,-2.0,0.09741353103284542,-2.0,-2.0,0.07799214025667896,-2.0,-2.0],"samples":[53,6,3,2,1,3,47,37,36,33,1,32,3,1,2,1,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,4,-1,-1,-1,8,9,-1,-1,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[16,7,6,5,-1,-1,-1,11,10,-1,-1,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,1,0,0,-2,-2,-2,0,1,-2,-2,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[0.044817883428661595,-0.011467162007951823,-0.003963853360013519,-0.014403054156832601,-2.0,-2.0,-2.0,-0.01840998993009816,0.019830445520565395,-2.0,-2.0,0.0365772269111454,0.010785104377707504,-2.0,-2.0,-2.0,0.04824085514617534,0.0935296978037726,-2.0,-2.0,0.08842758129676714,0.08623446534423462,-2.0,-2.0,-2.0],"samples":[53,43,6,5,3,2,1,37,2,1,1,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,11,-1,-1,14,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,16,9,8,-1,-1,13,12,-1,-1,15,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[0,1,-2,-2,0,0,1,-2,-2,1,1,-2,-2,1,-2,-2,0,0,-2,1,-2,-2,1,-2,-2],"threshold":[-0.0581129864304948,0.020415981961623222,-2.0,-2.0,0.016116890250844333,-0.0073700623091343155,-0.04083748593024822,-2.0,-2.0,0.012141825624055441,-0.05043529992436098,-2.0,-2.0,0.09049072033875823,-2.0,-2.0,0.08102075775810522,0.04936679851252605,-2.0,0.023492647416817745,-2.0,-2.0,0.08741838860483818,-2.0,-2.0],"samples":[53,2,1,1,51,42,5,2,3,37,33,1,32,4,2,2,9,5,1,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,8,-1,-1,-1,12,-1,14,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[16,5,4,-1,-1,11,10,9,-1,-1,-1,13,-1,15,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,0,0,-2,-2,1,1,0,-2,-2,-2,0,-2,0,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[0.03017928467990398,-0.06085696776384602,-0.07135530807272406,-2.0,-2.0,-0.0054552546812235425,-0.04806386773520995,-0.003594734585400424,-2.0,-2.0,-2.0,0.00847513593811011,-2.0,0.06121795002499422,-2.0,-2.0,0.08406485858135646,0.00818788961982371,-2.0,0.09042140109406534,-2.0,-2.0,0.055303952342379094,-2.0,-2.0],"samples":[53,43,2,1,1,41,6,3,2,1,3,35,32,3,1,2,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,4,-1,-1,7,-1,-1,10,11,-1,13,-1,-1,16,-1,-1,19,20,-1,-1,23,-1,-1],"right":[18,9,6,5,-1,-1,8,-1,-1,15,12,-1,14,-1,-1,17,-1,-1,22,21,-1,-1,24,-1,-1],"feature":[0,0,0,1,-2,-2,1,-2,-2,1,1,-2,0,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.06432911147883114,-0.0003187862434503863,-0.04432920766366981,0.016321948218563767,-2.0,-2.0,-0.07953328287319077,-2.0,-2.0,0.03909306368588053,-0.042964679925078526,-2.0,0.017226007892926044,-2.0,-2.0,0.0968732277472732,-2.0,-2.0,0.0805006416406143,0.03975306729395212,-2.0,-2.0,0.08919680114551824,-2.0,-2.0],"samples":[53,45,7,2,1,1,5,2,3,38,34,1,33,32,1,4,2,2,8,4,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,-1,8,9,-1,11,-1,-1,14,-1,16,-1,-1,19,-1,21,22,-1,-1,-1],"right":[18,7,6,5,-1,-1,-1,13,10,-1,12,-1,-1,15,-1,17,-1,-1,20,-1,24,23,-1,-1,-1],"feature":[0,1,1,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,1,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.03916197064121951,-0.0027037315338546974,-0.020491876274757924,-0.00199680434826305,-2.0,-2.0,-2.0,0.012204797753486,-0.07840711696765638,-2.0,0.006492679880393687,-2.0,-2.0,-0.011870188038050018,-2.0,0.08323279258849856,-2.0,-2.0,0.05040112499673709,-2.0,0.08932025831949625,0.09927596359719273,-2.0,-2.0,-2.0],"samples":[53,45,6,3,2,1,3,39,34,1,33,32,1,5,1,4,2,2,8,2,6,5,2,3,1]},{"left":[1,-1,3,4,-1,6,7,8,-1,-1,11,-1,-1,14,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[2,-1,16,5,-1,13,10,9,-1,-1,12,-1,-1,15,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[0,-2,0,0,-2,1,0,0,-2,-2,1,-2,-2,1,-2,-2,1,0,-2,-2,1,0,-2,-2,-2],"threshold":[-0.07408921253639522,-2.0,0.01224206014533763,-0.036339046577262585,-2.0,0.07329152513679815,-0.0023888445681539867,-0.017142407239557636,-2.0,-2.0,-0.043180682235633906,-2.0,-2.0,0.08139692182331995,-2.0,-2.0,0.014695243713766952,0.07361122919259228,-2.0,-2.0,0.0882504682116149,0.09854982526418188,-2.0,-2.0,-2.0],"samples":[53,1,52,43,1,42,38,5,3,2,33,1,32,4,2,2,9,3,1,2,6,5,2,3,1]},{"left":[1,2,3,4,5,-1,-1,-1,9,-1,11,12,-1,-1,-1,-1,17,-1,19,-1,21,22,-1,-1,-1],"right":[16,15,8,7,6,-1,-1,-1,10,-1,14,13,-1,-1,-1,-1,18,-1,20,-1,24,23,-1,-1,-1],"feature":[0,1,0,1,1,-2,-2,-2,0,-2,1,1,-2,-2,-2,-2,0,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.007092247222285228,0.09588154750434913,-0.010217519812181858,0.013351446917504999,-0.0017302802664585538,-2.0,-2.0,-2.0,-0.0023277510798516204,-2.0,0.004981020840765918,-0.019974033358143836,-2.0,-2.0,-2.0,-2.0,0.03032999436719795,-2.0,0.040482863921215965,-2.0,0.08100868889271269,0.09306308017636983,-2.0,-2.0,-2.0],"samples":[53,44,42,5,4,3,1,1,37,2,35,33,1,32,2,2,9,1,8,2,6,5,2,3,1]},{"left":[1,2,3,4,5,-1,-1,-1,9,10,-1,-1,-1,-1,15,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[14,13,8,7,6,-1,-1,-1,12,11,-1,-1,-1,-1,16,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[1,0,0,1,0,-2,-2,-2,0,1,-2,-2,-2,-2,1,-2,0,1,0,-2,-2,-2,1,-2,-2],"threshold":[0.018185159530994657,0.07675745412353407,-0.003945408283996296,-0.019681086146733223,-0.01537955280261161,-2.0,-2.0,-2.0,0.016242595201636668,-0.03596393983331266,-2.0,-2.0,-2.0,-2.0,0.036454803540518554,-2.0,0.09723859848867808,0.09880400996553482,0.06951591875997919,-2.0,-2.0,-2.0,0.08991996823238177,-2.0,-2.0],"samples":[53,42,40,6,5,3,2,1,34,33,1,32,1,2,11,1,10,6,4,2,2,2,4,3,1]},{"left":[1,2,3,-1,5,-1,-1,8,-1,10,11,12,-1,-1,-1,-1,17,18,-1,-1,21,-1,-1],"right":[16,7,4,-1,6,-1,-1,9,-1,15,14,13,-1,-1,-1,-1,20,19,-1,-1,22,-1,-1],"feature":[0,0,1,-2,1,-2,-2,0,-2,0,1,1,-2,-2,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.07120408549606316,-0.013342794511881015,-0.019526916496565055,-2.0,0.0208497665915922,-2.0,-2.0,-0.006566363289663996,-2.0,0.013711080279005325,0.08792964997275102,0.05120696719422588,-2.0,-2.0,-2.0,-2.0,0.09559775076154887,0.04672308931314142,-2.0,-2.0,0.08848096832565651,-2.0,-2.0],"samples":[53,45,5,3,2,1,1,40,2,38,37,35,33,2,2,1,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,8,9,-1,-1,12,-1,-1,-1,16,-1,-1,19,-1,-1],"right":[18,5,4,-1,-1,15,14,11,10,-1,-1,13,-1,-1,-1,17,-1,-1,20,-1,-1],"feature":[0,1,0,-2,-2,0,0,1,0,-2,-2,1,-2,-2,-2,1,-2,-2,1,-2,-2],"threshold":[0.0904831989502165,-0.03687095120093724,-0.00030611912515591914,-2.0,-2.0,0.06232500107527006,0.0014976138573196407,0.04939915197195949,-0.07043156071087187,-2.0,-2.0,0.08497011984440156,-2.0,-2.0,-2.0,0.039665760051323676,-2.0,-2.0,0.08303232819134118,-2.0,-2.0],"samples":[53,49,3,2,1,46,42,41,37,1,36,4,2,2,1,4,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,7,-1,9,10,-1,-1,-1,14,-1,-1,17,-1,19,20,-1,-1,-1],"right":[16,13,6,5,-1,-1,8,-1,12,11,-1,-1,-1,15,-1,-1,18,-1,22,21,-1,-1,-1],"feature":[0,1,0,1,-2,-2,0,-2,0,1,-2,-2,-2,1,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.059361518986455114,0.05654589111499925,-0.04567630156558649,0.02248229501458449,-2.0,-2.0,-0.018126873638498093,-2.0,0.0011709955683738022,-0.02698209543332527,-2.0,-2.0,-2.0,0.0876576598375822,-2.0,-2.0,0.049394680966812786,-2.0,0.08774551877778974,0.09914014598190368,-2.0,-2.0,-2.0],"samples":[53,45,41,2,1,1,39,3,36,35,3,32,1,4,2,2,8,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,-1,7,8,-1,10,11,-1,-1,-1,15,16,-1,18,-1,-1,-1],"right":[4,3,-1,-1,6,-1,14,9,-1,13,12,-1,-1,-1,20,17,-1,19,-1,-1,-1],"feature":[1,0,-2,-2,1,-2,1,0,-2,0,0,-2,-2,-2,1,1,-2,1,-2,-2,-2],"threshold":[-0.06396099777006943,-0.005162240693985802,-2.0,-2.0,-0.003161756614617952,-2.0,0.02986881038438097,-0.0709849644935255,-2.0,0.062334732539145045,0.016014910725550346,-2.0,-2.0,-2.0,0.09003548922461024,0.03985553613300297,-2.0,0.08965202964785801,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,3,47,36,1,35,33,32,1,2,11,9,1,8,7,1,2]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,-1,12,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,16,11,-1,15,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,0,0,-2,-2,1,0,-2,0,0,-2,-2,-2,1,0,-2,0,-2,-2,1,-2,-2],"threshold":[-0.05773975696269762,-0.006534678299385175,-2.0,-2.0,-0.04629492424714155,-0.0786553176823409,-2.0,-2.0,0.0077403983034012615,-0.00292453458651289,-2.0,0.039837156444626674,0.01726382226152361,-2.0,-2.0,-2.0,0.08749797192718102,0.032101395800405205,-2.0,0.08622170014132766,-2.0,-2.0,0.09002301982124883,-2.0,-2.0],"samples":[53,3,2,1,50,2,1,1,48,38,3,35,33,32,1,2,10,7,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,-1,12,13,-1,-1,-1,17,18,-1,-1,21,-1,23,-1,-1],"right":[4,3,-1,-1,16,9,8,-1,-1,11,-1,15,14,-1,-1,-1,20,19,-1,-1,22,-1,24,-1,-1],"feature":[0,1,-2,-2,0,0,0,-2,-2,1,-2,1,1,-2,-2,-2,1,0,-2,-2,0,-2,1,-2,-2],"threshold":[-0.056477694055117926,0.021634872692246437,-2.0,-2.0,0.006560904533772005,-0.0023794511091736123,-0.015172114897012052,-2.0,-2.0,-0.006796491214575068,-2.0,0.0980857063721997,0.04255128782246701,-2.0,-2.0,-2.0,0.04883181410181016,0.04890957199095286,-2.0,-2.0,0.08878531571534302,-2.0,0.0835947084541892,-2.0,-2.0],"samples":[53,2,1,1,51,42,5,3,2,37,1,36,34,32,2,2,9,3,1,2,6,2,4,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,9,10,-1,-1,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[6,5,4,-1,-1,-1,16,15,12,11,-1,-1,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[1,1,0,-2,-2,-2,1,1,0,0,-2,-2,0,-2,-2,-2,1,0,-2,0,-2,-2,1,-2,-2],"threshold":[-0.006203028833769386,-0.036070010049598984,-0.0014473201902471255,-2.0,-2.0,-2.0,0.03519530043073227,0.0289496617528451,0.001222723509432741,-0.019083499081002327,-2.0,-2.0,0.04374009308601523,-2.0,-2.0,-2.0,0.08011146157018215,0.07734033970731831,-2.0,0.08062596445016844,-2.0,-2.0,0.09947195869220196,-2.0,-2.0],"samples":[53,6,3,2,1,3,47,37,36,33,1,32,3,1,2,1,10,7,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,7,8,-1,-1,11,-1,-1,14,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,16,13,10,9,-1,-1,12,-1,-1,15,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[0,0,-2,-2,0,1,1,0,-2,-2,1,-2,-2,1,-2,-2,1,0,-2,-2,1,0,-2,-2,-2],"threshold":[-0.042360865341587416,-0.0759654012338562,-2.0,-2.0,0.006440590471028476,0.03879344551657175,-0.0502672113280003,-0.007836438939761072,-2.0,-2.0,-0.014102977354619675,-2.0,-2.0,0.09002596561758124,-2.0,-2.0,0.06170401530205882,0.022096135011632753,-2.0,-2.0,0.08356622239661136,0.09991703583426453,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,42,38,3,2,1,35,3,32,4,2,2,9,3,1,2,6,5,2,3,1]},{"left":[1,-1,3,4,-1,-1,7,8,-1,10,11,-1,-1,14,-1,-1,17,18,-1,-1,21,-1,-1],"right":[2,-1,6,5,-1,-1,16,9,-1,13,12,-1,-1,15,-1,-1,20,19,-1,-1,22,-1,-1],"feature":[0,-2,1,0,-2,-2,0,1,-2,1,0,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.07642112547026296,-2.0,-0.03390405797297169,-0.00969552599094355,-2.0,-2.0,0.04393312819650462,-0.011441373094767494,-2.0,0.0071545940991964195,0.018760429228776975,-2.0,-2.0,0.030749710342122632,-2.0,-2.0,0.08223902553803125,0.07516973655066561,-2.0,-2.0,0.08137616254702053,-2.0,-2.0],"samples":[53,1,52,3,2,1,49,41,3,38,33,32,1,5,1,4,8,4,2,2,4,3,1]},{"left":[1,2,3,4,-1,6,7,-1,-1,10,-1,-1,-1,-1,15,16,-1,18,-1,-1,21,-1,-1],"right":[14,13,12,5,-1,9,8,-1,-1,11,-1,-1,-1,-1,20,17,-1,19,-1,-1,22,-1,-1],"feature":[1,0,1,0,-2,1,0,-2,-2,1,-2,-2,-2,-2,1,0,-2,0,-2,-2,1,-2,-2],"threshold":[0.03225389028579413,0.04295927963262136,0.015909396168896167,-0.06071867673016253,-2.0,-0.02607593203635475,-0.007541193755140474,-2.0,-2.0,-0.013923433425649355,-2.0,-2.0,-2.0,-2.0,0.08000156647551507,0.015848481852095524,-2.0,0.09178748849825161,-2.0,-2.0,0.09660085251527833,-2.0,-2.0],"samples":[53,43,41,40,1,39,3,2,1,36,3,33,1,2,10,7,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,7,8,-1,-1,11,-1,13,-1,-1,-1,17,-1,19,-1,21,-1,23,-1,-1],"right":[4,3,-1,-1,16,15,10,9,-1,-1,12,-1,14,-1,-1,-1,18,-1,20,-1,22,-1,24,-1,-1],"feature":[0,0,-2,-2,0,1,0,1,-2,-2,1,-2,1,-2,-2,-2,0,-2,1,-2,0,-2,1,-2,-2],"threshold":[-0.06504974421030199,-0.07767840966477538,-2.0,-2.0,0.004658753576202074,0.08959125154959044,-0.00813101052206126,-0.03312440227863987,-2.0,-2.0,-0.04654224789352822,-2.0,0.011420007284385919,-2.0,-2.0,-2.0,0.0782077739597354,-2.0,0.03333415337272382,-2.0,0.08178350676297136,-2.0,0.08234653462448857,-2.0,-2.0],"samples":[53,2,1,1,51,42,40,5,2,3,35,1,34,32,2,2,9,1,8,2,6,2,4,3,1]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,11,-1,13,-1,-1,-1,17,18,-1,20,-1,-1,23,-1,-1],"right":[4,3,-1,-1,16,9,8,-1,-1,15,12,-1,14,-1,-1,-1,22,19,-1,21,-1,-1,24,-1,-1],"feature":[0,0,-2,-2,1,1,0,-2,-2,0,0,-2,0,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[-0.06190548010461104,-0.07233954068004397,-2.0,-2.0,0.0783977721609202,-0.04721428138247166,-0.0024213058390648214,-2.0,-2.0,0.028031511484886952,-0.0056771636536220565,-2.0,0.009837061202925683,-2.0,-2.0,-2.0,0.08538684528393517,0.051045153189678685,-2.0,0.09975868114960097,-2.0,-2.0,0.05522448617145793,-2.0,-2.0],"samples":[53,2,1,1,51,41,3,2,1,38,36,3,33,32,1,2,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,-1,-1,6,7,-1,9,10,-1,-1,13,-1,-1,-1,17,18,19,-1,21,-1,-1,-1,-1],"right":[16,5,4,-1,-1,15,8,-1,12,11,-1,-1,14,-1,-1,-1,24,23,20,-1,22,-1,-1,-1,-1],"feature":[1,1,0,-2,-2,1,0,-2,0,0,-2,-2,0,-2,-2,-2,1,1,0,-2,0,-2,-2,-2,-2],"threshold":[0.054414555950321325,-0.07318654146056272,-0.003915391185310022,-2.0,-2.0,0.022415492896210316,-0.06604370818284604,-2.0,0.012070558030476686,-0.0003529900607697027,-2.0,-2.0,0.05846290082309563,-2.0,-2.0,-2.0,0.0999608349549464,0.08380373337571709,0.03611161126367895,-2.0,0.08028943874974385,-2.0,-2.0,-2.0,-2.0],"samples":[53,43,3,2,1,40,39,1,38,35,3,32,3,1,2,1,10,8,7,2,5,2,3,1,2]},{"left":[1,2,-1,-1,5,-1,7,-1,9,10,-1,12,-1,-1,15,16,-1,-1,19,-1,-1],"right":[4,3,-1,-1,6,-1,8,-1,14,11,-1,13,-1,-1,18,17,-1,-1,20,-1,-1],"feature":[1,0,-2,-2,0,-2,0,-2,0,1,-2,0,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.03607694298599279,-0.0014149261794511557,-2.0,-2.0,-0.07553893971787788,-2.0,-0.04961348545230836,-2.0,0.060598311361437715,-0.019924129582246715,-2.0,0.0018775909821285037,-2.0,-2.0,0.0959890470114226,0.023020878451885045,-2.0,-2.0,0.08850551838374673,-2.0,-2.0],"samples":[53,3,2,1,50,1,49,1,48,40,3,37,36,1,8,4,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,-1,8,9,10,-1,-1,13,14,-1,-1,-1,-1,19,20,-1,-1,23,-1,-1],"right":[18,7,6,5,-1,-1,-1,17,12,11,-1,-1,16,15,-1,-1,-1,-1,22,21,-1,-1,24,-1,-1],"feature":[0,0,0,0,-2,-2,-2,0,1,0,-2,-2,1,1,-2,-2,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.07256995819047979,-0.012961800420095843,-0.02348089026119473,-0.07802404824795658,-2.0,-2.0,-2.0,0.0016092393567626127,-0.04605189272517165,-0.004808249326428527,-2.0,-2.0,0.0886857012410779,0.06549825778304684,-2.0,-2.0,-2.0,-2.0,0.08060130769026569,0.03272935370994748,-2.0,-2.0,0.08748761159517504,-2.0,-2.0],"samples":[53,45,5,2,1,1,3,40,39,3,2,1,36,34,32,2,2,1,8,4,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,-1,10,11,-1,-1,-1,15,16,-1,18,19,-1,-1,-1,23,-1,-1],"right":[4,3,-1,-1,14,7,-1,9,-1,13,12,-1,-1,-1,22,17,-1,21,20,-1,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,1,0,-2,1,-2,0,0,-2,-2,-2,0,1,-2,1,0,-2,-2,-2,1,-2,-2],"threshold":[-0.0450997283911284,-0.005995056288425041,-2.0,-2.0,0.028886227273116412,-0.04133337463127978,-2.0,-0.015010177788567556,-2.0,0.028335843471910493,0.007426672173173353,-2.0,-2.0,-2.0,0.09412351874699079,0.05473472501816863,-2.0,0.0887448264038767,0.012864608185069357,-2.0,-2.0,-2.0,0.08978959681345203,-2.0,-2.0],"samples":[53,3,2,1,50,39,1,38,3,35,33,32,1,2,11,7,1,6,4,2,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,7,-1,9,-1,11,-1,-1,-1,15,16,17,-1,-1,20,-1,-1,-1],"right":[14,13,6,5,-1,-1,8,-1,10,-1,12,-1,-1,-1,22,19,18,-1,-1,21,-1,-1,-1],"feature":[1,1,1,0,-2,-2,0,-2,1,-2,0,-2,-2,-2,1,0,0,-2,-2,1,-2,-2,-2],"threshold":[0.055095319708230145,0.0027826608946616427,-0.03019047242638085,-0.001956371855014247,-2.0,-2.0,-0.023812259696807607,-2.0,-0.010678005888189054,-2.0,0.055820686117013775,-2.0,-2.0,-2.0,0.09166192260415229,0.08981550650853276,0.07225381607379325,-2.0,-2.0,0.08879289912907841,-2.0,-2.0,-2.0],"samples":[53,43,42,3,2,1,39,1,38,3,35,33,2,1,10,8,4,2,2,4,3,1,2]},{"left":[1,2,3,4,-1,-1,-1,8,9,10,-1,-1,-1,14,-1,-1,17,-1,19,20,-1,-1,23,-1,-1],"right":[16,7,6,5,-1,-1,-1,13,12,11,-1,-1,-1,15,-1,-1,18,-1,22,21,-1,-1,24,-1,-1],"feature":[0,0,0,0,-2,-2,-2,1,1,0,-2,-2,-2,1,-2,-2,0,-2,0,1,-2,-2,1,-2,-2],"threshold":[0.006523181041183518,-0.015604703755387528,-0.05409274181241219,-0.07409938936008732,-2.0,-2.0,-2.0,0.00557002135613982,-0.013298296749116867,-0.004125863605218197,-2.0,-2.0,-2.0,0.08555223501284573,-2.0,-2.0,0.0712958660343107,-2.0,0.08306530117152806,0.02321397056288242,-2.0,-2.0,0.08181488410689045,-2.0,-2.0],"samples":[53,44,5,2,1,1,3,39,35,3,2,1,32,4,2,2,9,1,8,4,2,2,4,3,1]},{"left":[1,2,-1,4,-1,-1,7,8,9,10,-1,12,-1,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[6,3,-1,5,-1,-1,16,15,14,11,-1,13,-1,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[0,1,-2,1,-2,-2,1,0,0,0,-2,1,-2,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.011496473511245359,-0.004348338039418732,-2.0,0.023334465824663676,-2.0,-2.0,0.040349173346739736,0.05751657986860753,0.011906292024256786,-0.001371661459809128,-2.0,-0.0665812484504102,-2.0,-2.0,-2.0,-2.0,0.027146551104186182,0.09288245271309545,-2.0,-2.0,0.08550952067713997,0.08218672413002426,-2.0,-2.0,-2.0],"samples":[53,5,3,2,1,1,48,38,36,35,2,33,1,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,-1,-1,11,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[6,5,4,-1,-1,-1,10,9,-1,-1,16,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,1,0,-2,-2,-2,0,1,-2,-2,1,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.018126936097685266,-0.042892806634324626,-0.0010151480428353139,-2.0,-2.0,-2.0,-0.04643401262619521,0.007654509055539065,-2.0,-2.0,0.013566913291676032,0.041473950990812976,0.00465319420271547,-2.0,-2.0,-2.0,0.033718983415852506,0.08996010668385668,-2.0,-2.0,0.08311569943204596,0.0893988886185958,-2.0,-2.0,-2.0],"samples":[53,6,3,2,1,3,47,2,1,1,45,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,7,-1,-1,10,11,-1,13,-1,-1,16,-1,-1,19,-1,21,-1,23,-1,-1],"right":[4,3,-1,-1,18,9,8,-1,-1,15,12,-1,14,-1,-1,17,-1,-1,20,-1,22,-1,24,-1,-1],"feature":[1,0,-2,-2,0,0,1,-2,-2,1,1,-2,0,-2,-2,1,-2,-2,1,-2,0,-2,1,-2,-2],"threshold":[-0.022293894061572457,-0.0026644321832674017,-2.0,-2.0,0.02281793346500166,-0.0431487947385789,0.012426010317158655,-2.0,-2.0,0.05782067195068727,-0.0007749352155151067,-2.0,0.0008217780950369447,-2.0,-2.0,0.09880441659035095,-2.0,-2.0,0.013148527622761285,-2.0,0.09682577488920567,-2.0,0.0870432877265422,-2.0,-2.0],"samples":[53,3,2,1,50,42,2,1,1,40,36,3,33,32,1,4,2,2,8,2,6,2,4,3,1]},{"left":[1,2,3,4,-1,-1,-1,8,-1,10,-1,12,-1,-1,15,-1,17,18,19,-1,21,-1,-1,-1,-1],"right":[14,7,6,5,-1,-1,-1,9,-1,11,-1,13,-1,-1,16,-1,24,23,20,-1,22,-1,-1,-1,-1],"feature":[1,1,1,0,-2,-2,-2,0,-2,0,-2,0,-2,-2,1,-2,1,1,0,-2,0,-2,-2,-2,-2],"threshold":[0.015255287241456014,-0.0009322767500686557,-0.07726199802415726,-0.00897207417446771,-2.0,-2.0,-2.0,-0.035113145797365394,-2.0,0.014864358092367256,-2.0,0.04482058550856655,-2.0,-2.0,0.03911946695931716,-2.0,0.0922067442112512,0.0818813232561418,0.010598573204946197,-2.0,0.08361539416771128,-2.0,-2.0,-2.0,-2.0],"samples":[53,42,6,3,2,1,3,36,1,35,32,3,1,2,11,1,10,8,7,2,5,2,3,1,2]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,-1,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,16,11,-1,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,0,-2,-2,0,0,-2,-2,1,0,-2,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.06822365619712281,-0.008026280721074341,-2.0,-2.0,-0.05231960246839504,-0.07114321418524873,-2.0,-2.0,0.07954920111121654,-0.0037169754343583,-2.0,0.0538825835043185,0.009047276626703325,-2.0,-2.0,-2.0,0.028213723996213115,0.09784563310421449,-2.0,-2.0,0.08858401266735204,0.09885698712268658,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,2,1,1,48,38,3,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,11,-1,13,-1,-1,16,-1,-1,19,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,18,15,12,-1,14,-1,-1,17,-1,-1,20,-1,24,23,-1,-1,-1],"feature":[1,0,-2,-2,0,0,-2,-2,0,1,1,-2,0,-2,-2,1,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[-0.04102382010761918,-0.00022841079126330668,-2.0,-2.0,-0.06682479073930064,-0.07290273224584691,-2.0,-2.0,0.057526262348835885,0.06270150757695686,-0.0015830305337894528,-2.0,0.006908842872495008,-2.0,-2.0,0.09184976127136762,-2.0,-2.0,0.007821072440230859,-2.0,0.08494635538344586,0.08850130280524493,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,2,1,1,48,40,36,3,33,32,1,4,2,2,8,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,9,-1,11,-1,-1,-1,15,16,-1,-1,19,-1,-1],"right":[4,3,-1,-1,14,7,-1,13,10,-1,12,-1,-1,-1,18,17,-1,-1,20,-1,-1],"feature":[0,1,-2,-2,0,0,-2,0,0,-2,1,-2,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.021907639619176397,0.025906482009401228,-2.0,-2.0,0.07065577634745134,-0.012072315836605218,-2.0,0.010223366669147159,-0.001332698370033492,-2.0,0.06227223845963151,-2.0,-2.0,-2.0,0.09047271774935974,0.05598539434777871,-2.0,-2.0,0.08527124736818811,-2.0,-2.0],"samples":[53,2,1,1,51,43,3,40,39,2,37,33,4,1,8,4,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,-1,10,11,-1,-1,-1,15,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[4,3,-1,-1,14,7,-1,9,-1,13,12,-1,-1,-1,16,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,1,1,-2,0,-2,0,0,-2,-2,-2,1,-2,0,1,0,-2,-2,-2,1,-2,-2],"threshold":[-0.04303315021771511,-0.00923836380047579,-2.0,-2.0,0.017620878452377975,-0.0019963254342659845,-2.0,-0.07537044639586887,-2.0,0.055502570509621464,0.013190596802179672,-2.0,-2.0,-2.0,0.03883974495101188,-2.0,0.08789342395052452,0.08877735180706033,0.04783392849928016,-2.0,-2.0,-2.0,0.08693706876059903,-2.0,-2.0],"samples":[53,3,2,1,50,39,3,36,1,35,33,32,1,2,11,1,10,6,4,2,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,-1,8,9,-1,-1,12,13,-1,-1,16,17,-1,-1,-1,21,-1,-1],"right":[20,7,6,5,-1,-1,-1,11,10,-1,-1,15,14,-1,-1,19,18,-1,-1,-1,22,-1,-1],"feature":[1,1,1,0,-2,-2,-2,0,1,-2,-2,0,1,-2,-2,0,1,-2,-2,-2,0,-2,-2],"threshold":[0.08498472847899996,-0.0026080874155368083,-0.034773505928760946,-0.004235502868393138,-2.0,-2.0,-2.0,-0.038107151913949984,0.012878738900040862,-2.0,-2.0,0.012605849381532997,0.03142499061442232,-2.0,-2.0,0.08833040938783047,0.013818026366901,-2.0,-2.0,-2.0,0.02167591565069985,-2.0,-2.0],"samples":[53,50,6,3,2,1,3,44,2,1,1,42,34,32,2,8,5,3,2,3,3,2,1]},{"left":[1,2,3,-1,-1,6,-1,8,9,-1,-1,12,-1,-1,15,16,-1,18,-1,20,-1,-1,23,-1,-1],"right":[14,5,4,-1,-1,7,-1,11,10,-1,-1,13,-1,-1,22,17,-1,19,-1,21,-1,-1,24,-1,-1],"feature":[1,1,0,-2,-2,1,-2,0,0,-2,-2,0,-2,-2,1,1,-2,0,-2,0,-2,-2,1,-2,-2],"threshold":[0.021438289471328642,-0.06297455471018137,-0.008768576149771414,-2.0,-2.0,-0.008838283812906897,-2.0,0.013018587356492126,-0.005672319072019774,-2.0,-2.0,0.05785350694362312,-2.0,-2.0,0.0877524174497987,0.0391500987671061,-2.0,0.05372032731434832,-2.0,0.0804821801978211,-2.0,-2.0,0.09588801124974156,-2.0,-2.0],"samples":[53,42,3,2,1,39,3,36,33,1,32,3,1,2,11,8,1,7,2,5,2,3,3,1,2]},{"left":[1,2,-1,-1,5,6,-1,8,-1,10,11,-1,-1,-1,15,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[4,3,-1,-1,14,7,-1,9,-1,13,12,-1,-1,-1,16,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[1,0,-2,-2,1,1,-2,0,-2,0,0,-2,-2,-2,0,-2,1,0,0,-2,-2,-2,0,-2,-2],"threshold":[-0.06722817083477933,-0.001099492864834066,-2.0,-2.0,0.010788808951859005,-0.013114124007353633,-2.0,-0.03529758581007525,-2.0,0.028661404258065844,0.010330571604176948,-2.0,-2.0,-2.0,-0.020683292600654955,-2.0,0.08045645602100043,0.09886032476201219,0.0077262311227932244,-2.0,-2.0,-2.0,0.08962357484622761,-2.0,-2.0],"samples":[53,3,2,1,50,39,3,36,1,35,33,32,1,2,11,1,10,7,4,2,2,3,3,2,1]},{"left":[1,2,-1,-1,5,6,-1,8,9,-1,11,-1,-1,-1,15,16,17,-1,-1,-1,21,-1,23,-1,-1],"right":[4,3,-1,-1,14,7,-1,13,10,-1,12,-1,-1,-1,20,19,18,-1,-1,-1,22,-1,24,-1,-1],"feature":[1,0,-2,-2,1,0,-2,0,0,-2,0,-2,-2,-2,0,1,0,-2,-2,-2,0,-2,1,-2,-2],"threshold":[-0.05614834426946669,-6.253173437947672e-05,-2.0,-2.0,0.0025149423455790854,-0.03277154511759865,-2.0,0.04292175841642419,-0.004365931383707198,-2.0,0.01661086749252361,-2.0,-2.0,-2.0,0.018100389204049813,0.0965957809011194,-0.02414337326999884,-2.0,-2.0,-2.0,0.09988057507101562,-2.0,0.08899390543809602,-2.0,-2.0],"samples":[53,3,2,1,50,39,1,38,36,3,33,32,1,2,11,5,3,1,2,2,6,2,4,3,1]},{"left":[1,2,3,-1,-1,-1,7,8,-1,-1,11,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[6,5,4,-1,-1,-1,10,9,-1,-1,16,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,0,0,-2,-2,-2,0,1,-2,-2,1,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.005355372247639337,-0.0035457045833356127,-0.019405345785407688,-2.0,-2.0,-2.0,-0.02826305650743499,0.007549125806051809,-2.0,-2.0,0.05498301033602995,0.07580573858559607,0.011831442994960662,-2.0,-2.0,-2.0,0.015842287113329148,0.09566726852699439,-2.0,-2.0,0.08921585235086928,0.08329920046246526,-2.0,-2.0,-2.0],"samples":[53,6,5,3,2,1,47,2,1,1,45,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,-1,7,8,9,-1,-1,12,13,-1,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[4,3,-1,-1,6,-1,16,11,10,-1,-1,15,14,-1,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,0,-2,-2,1,-2,1,0,0,-2,-2,0,0,-2,-2,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[-0.058794267184190646,-4.1595300680501504e-05,-2.0,-2.0,-0.011933237873648148,-2.0,0.07717987422223008,-0.05054253665008616,-0.07572637247401806,-2.0,-2.0,0.03150104375530542,0.018725248808000833,-2.0,-2.0,-2.0,0.013685289887531921,0.09796124270200648,-2.0,-2.0,0.08090291909923182,0.0968331852471987,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,3,47,37,2,1,1,35,33,32,1,2,10,4,2,2,6,5,2,3,1]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,11,12,-1,-1,-1,16,17,-1,-1,20,-1,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,22,15,14,13,-1,-1,-1,19,18,-1,-1,21,-1,-1,-1],"feature":[0,1,-2,-2,1,0,-2,-2,1,0,1,1,-2,-2,-2,0,1,-2,-2,1,-2,-2,-2],"threshold":[-0.0444942964011509,0.01867924376953185,-2.0,-2.0,-0.026879954224336533,-0.00020845009954778733,-2.0,-2.0,0.09254615916563559,0.027832278488530524,0.05761240914101559,-0.004360294498068351,-2.0,-2.0,-2.0,0.08087344203532004,0.015078145978658983,-2.0,-2.0,0.0894614999038659,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,3,2,1,48,46,38,36,3,33,2,8,4,2,2,4,3,1,2]},{"left":[1,2,3,-1,-1,6,-1,8,9,-1,11,-1,-1,14,-1,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[16,5,4,-1,-1,7,-1,13,10,-1,12,-1,-1,15,-1,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[0,1,0,-2,-2,0,-2,1,0,-2,0,-2,-2,1,-2,-2,1,0,-2,-2,1,0,-2,-2,-2],"threshold":[0.006260984800548874,-0.027467059266870306,-0.006494076133136831,-2.0,-2.0,-0.07855466301922256,-2.0,0.052598884472520105,-0.020334950883991322,-2.0,-0.0038227096015273805,-2.0,-2.0,0.0957333543216222,-2.0,-2.0,0.05576907571159769,0.07548476444194838,-2.0,-2.0,0.08685519077537246,0.09279610468867461,-2.0,-2.0,-2.0],"samples":[53,44,3,2,1,41,1,40,36,1,35,3,32,4,2,2,9,3,1,2,6,5,2,3,1]},{"left":[1,-1,3,4,5,-1,-1,8,9,-1,11,-1,-1,-1,15,16,-1,-1,19,-1,21,-1,-1],"right":[2,-1,14,7,6,-1,-1,13,10,-1,12,-1,-1,-1,18,17,-1,-1,20,-1,22,-1,-1],"feature":[0,-2,1,1,0,-2,-2,1,1,-2,0,-2,-2,-2,0,1,-2,-2,0,-2,1,-2,-2],"threshold":[-0.07686190980860011,-2.0,0.042126679126125985,-0.06573844432844457,-0.002067982220465706,-2.0,-2.0,0.00867706842356258,-0.014030297063559304,-2.0,0.005093812570250968,-2.0,-2.0,-2.0,0.02442347477468413,0.09963885857375179,-2.0,-2.0,0.0943899042530153,-2.0,0.08407906548732987,-2.0,-2.0],"samples":[53,1,52,42,3,2,1,39,38,3,35,32,3,1,10,4,2,2,6,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,8,-1,10,-1,-1,13,-1,-1,16,17,-1,-1,20,-1,-1,-1],"right":[22,5,4,-1,-1,15,12,9,-1,11,-1,-1,14,-1,-1,19,18,-1,-1,21,-1,-1,-1],"feature":[1,1,0,-2,-2,0,1,0,-2,1,-2,-2,1,-2,-2,0,1,-2,-2,1,-2,-2,-2],"threshold":[0.0987985937218509,-0.03052556089730251,-0.0017949522871697505,-2.0,-2.0,0.030285544077939902,0.009634081650151942,-0.02420375357494855,-2.0,-0.005991796952851833,-2.0,-2.0,0.07373873132480288,-2.0,-2.0,0.08416735652418679,0.01711136165809165,-2.0,-2.0,0.08752464074450926,-2.0,-2.0,-2.0],"samples":[53,51,3,2,1,48,40,37,1,36,3,33,3,1,2,8,4,2,2,4,3,1,2]},{"left":[1,2,3,-1,-1,6,7,-1,-1,10,11,12,-1,-1,-1,-1,17,-1,19,20,-1,-1,-1],"right":[16,5,4,-1,-1,9,8,-1,-1,15,14,13,-1,-1,-1,-1,18,-1,22,21,-1,-1,-1],"feature":[0,1,0,-2,-2,0,0,-2,-2,1,0,1,-2,-2,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.06445974712764149,-0.07611436415926086,-0.0037139723847821795,-2.0,-2.0,-0.047933512463758175,-0.07046184687575072,-2.0,-2.0,0.08233118972392445,0.015278785853598757,0.004084004353755985,-2.0,-2.0,-2.0,-2.0,0.034380986861989406,-2.0,0.08795933419238286,0.09804518398360793,-2.0,-2.0,-2.0],"samples":[53,45,3,2,1,42,2,1,1,40,38,37,35,2,1,2,8,2,6,5,2,3,1]},{"left":[1,2,3,4,5,-1,-1,8,9,-1,-1,12,-1,-1,-1,-1,17,18,-1,-1,21,-1,23,-1,-1],"right":[16,15,14,7,6,-1,-1,11,10,-1,-1,13,-1,-1,-1,-1,20,19,-1,-1,22,-1,24,-1,-1],"feature":[1,0,0,1,0,-2,-2,0,1,-2,-2,1,-2,-2,-2,-2,0,1,-2,-2,0,-2,1,-2,-2],"threshold":[0.03813630363815283,0.07158586133060255,0.01974206776922699,-0.05900112920764222,-0.009158120029404922,-2.0,-2.0,-0.02913985903860377,0.02850935369732806,-2.0,-2.0,-0.015568001544244547,-2.0,-2.0,-2.0,-2.0,0.02462890735489965,0.08008073512860579,-2.0,-2.0,0.08538144879026885,-2.0,0.08829585721954718,-2.0,-2.0],"samples":[53,43,41,40,3,2,1,37,2,1,1,35,3,32,1,2,10,4,2,2,6,2,4,3,1]},{"left":[1,2,-1,-1,5,-1,7,8,-1,10,-1,12,-1,-1,15,-1,17,18,-1,-1,21,-1,-1],"right":[4,3,-1,-1,6,-1,14,9,-1,11,-1,13,-1,-1,16,-1,20,19,-1,-1,22,-1,-1],"feature":[0,0,-2,-2,0,-2,0,0,-2,1,-2,1,-2,-2,0,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.05034921392601646,-0.0749920646373866,-2.0,-2.0,-0.013799142631725322,-2.0,0.01176318855020566,-0.00456367868255223,-2.0,-0.026452494597455314,-2.0,0.08215262345552284,-2.0,-2.0,0.07750964958593778,-2.0,0.08509870159432385,0.05858920110683306,-2.0,-2.0,0.08524177924905452,-2.0,-2.0],"samples":[53,2,1,1,51,3,48,39,2,37,1,36,34,2,9,1,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,5,6,-1,8,-1,-1,-1,-1,13,14,-1,16,-1,-1,19,-1,-1],"right":[12,11,4,-1,10,7,-1,9,-1,-1,-1,-1,18,15,-1,17,-1,-1,20,-1,-1],"feature":[1,1,0,-2,0,0,-2,1,-2,-2,-2,-2,1,0,-2,0,-2,-2,0,-2,-2],"threshold":[0.03954695128579211,0.00514276034119085,-0.06661358043046745,-2.0,0.05876665911542575,-0.019450946071094606,-2.0,-0.07572579568293296,-2.0,-2.0,-2.0,-2.0,0.08379724271615366,0.028690518646867526,-2.0,0.08961561166416435,-2.0,-2.0,0.06547368399828278,-2.0,-2.0],"samples":[53,43,42,1,41,39,3,36,3,33,2,1,10,7,2,5,2,3,3,2,1]},{"left":[1,2,3,4,5,-1,-1,-1,9,10,-1,-1,13,14,-1,-1,-1,18,-1,-1,21,-1,-1],"right":[20,17,8,7,6,-1,-1,-1,12,11,-1,-1,16,15,-1,-1,-1,19,-1,-1,22,-1,-1],"feature":[0,0,0,0,1,-2,-2,-2,1,0,-2,-2,0,1,-2,-2,-2,1,-2,-2,1,-2,-2],"threshold":[0.09983865236882694,0.028128246384659966,-0.011188251773897637,-0.022461644152320312,0.018702329081013106,-2.0,-2.0,-2.0,-0.07828614929894909,-0.0055620108351975145,-2.0,-2.0,0.01676993735684684,0.07189011484029412,-2.0,-2.0,-2.0,0.07287706051709972,-2.0,-2.0,0.08568572472112214,-2.0,-2.0],"samples":[53,49,45,5,2,1,1,3,40,3,2,1,37,36,32,4,1,4,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,8,9,-1,11,-1,-1,-1,15,16,17,-1,-1,-1,21,-1,-1],"right":[4,3,-1,-1,14,7,-1,13,10,-1,12,-1,-1,-1,20,19,18,-1,-1,-1,22,-1,-1],"feature":[1,0,-2,-2,1,1,-2,1,0,-2,0,-2,-2,-2,0,0,1,-2,-2,-2,1,-2,-2],"threshold":[-0.04621304093224204,-0.009645805552903158,-2.0,-2.0,0.07681984867161311,-0.0186498845291582,-2.0,0.021636144017382154,-0.004276754948772735,-2.0,0.028832535522464103,-2.0,-2.0,-2.0,0.08849241664644783,0.06990571453908055,0.08006347542740752,-2.0,-2.0,-2.0,0.08795697810332892,-2.0,-2.0],"samples":[53,3,2,1,50,40,3,37,36,1,35,33,2,1,10,6,4,2,2,2,4,3,1]},{"left":[1,2,-1,4,5,-1,7,-1,9,-1,-1,-1,13,-1,15,-1,17,-1,-1],"right":[12,3,-1,11,6,-1,8,-1,10,-1,-1,-1,14,-1,16,-1,18,-1,-1],"feature":[0,0,-2,0,0,-2,0,-2,1,-2,-2,-2,1,-2,0,-2,1,-2,-2],"threshold":[0.05798789889894626,-0.07422924026438298,-2.0,0.01654560440165359,-0.05416532251955528,-2.0,-0.015827768769159378,-2.0,-0.018492810948372372,-2.0,-2.0,-2.0,0.03138980292248829,-2.0,0.0992377636073763,-2.0,0.08561012151114117,-2.0,-2.0],"samples":[53,45,1,44,43,1,42,3,39,3,36,1,8,2,6,2,4,3,1]},{"left":[1,2,3,-1,5,-1,-1,8,9,10,-1,-1,13,-1,-1,16,-1,-1,19,-1,21,22,-1,-1,-1],"right":[18,7,4,-1,6,-1,-1,15,12,11,-1,-1,14,-1,-1,17,-1,-1,20,-1,24,23,-1,-1,-1],"feature":[0,1,0,-2,0,-2,-2,1,0,1,-2,-2,0,-2,-2,1,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.07345212282046887,-0.00965374512587383,-0.019752963293162503,-2.0,-0.002675500597921884,-2.0,-2.0,0.07652446302832441,-0.06245617611546053,0.012891965808383,-2.0,-2.0,0.008904434163817943,-2.0,-2.0,0.08869325178149995,-2.0,-2.0,0.05839830424716699,-2.0,0.08990473452497033,0.08217288111663774,-2.0,-2.0,-2.0],"samples":[53,45,6,3,3,2,1,39,35,2,1,1,33,32,1,4,2,2,8,2,6,5,2,3,1]},{"left":[1,2,3,-1,-1,6,7,-1,9,10,-1,-1,13,-1,-1,-1,17,-1,19,20,-1,-1,-1],"right":[16,5,4,-1,-1,15,8,-1,12,11,-1,-1,14,-1,-1,-1,18,-1,22,21,-1,-1,-1],"feature":[0,0,1,-2,-2,0,0,-2,1,0,-2,-2,1,-2,-2,-2,1,-2,1,0,-2,-2,-2],"threshold":[0.055229165290675286,-0.02750469644892925,0.014794111985097044,-2.0,-2.0,0.012681234341106365,-0.012044520272830284,-2.0,0.047087908496716874,-0.0020747751661043447,-2.0,-2.0,0.09736450518000403,-2.0,-2.0,-2.0,0.0021201349343351597,-2.0,0.08682020796635077,0.08212953846516441,-2.0,-2.0,-2.0],"samples":[53,45,2,1,1,43,42,3,39,35,2,33,4,2,2,1,8,2,6,5,2,3,1]},{"left":[1,2,3,4,-1,-1,7,-1,9,-1,11,-1,-1,14,-1,16,17,-1,-1,-1,21,-1,-1],"right":[20,13,6,5,-1,-1,8,-1,10,-1,12,-1,-1,15,-1,19,18,-1,-1,-1,22,-1,-1],"feature":[0,1,1,0,-2,-2,1,-2,0,-2,0,-2,-2,1,-2,1,0,-2,-2,-2,1,-2,-2],"threshold":[0.08282031262475237,0.0023182471886422223,-0.049829973419192805,-0.006724686452159533,-2.0,-2.0,-0.016326115584314127,-2.0,-0.03380466122700874,-2.0,0.03273901469133155,-2.0,-2.0,0.06660340576101387,-2.0,0.08290017647843936,0.028950752950885603,-2.0,-2.0,-2.0,0.0888480836254717,-2.0,-2.0],"samples":[53,49,42,3,2,1,39,3,36,1,35,33,2,7,1,6,4,2,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,7,8,-1,10,-1,-1,-1,-1,15,16,-1,18,-1,20,-1,-1,-1],"right":[4,3,-1,-1,14,13,12,9,-1,11,-1,-1,-1,-1,22,17,-1,19,-1,21,-1,-1,-1],"feature":[1,0,-2,-2,1,1,0,1,-2,0,-2,-2,-2,-2,1,0,-2,0,-2,1,-2,-2,-2],"threshold":[-0.02767450407786328,-0.007409272297175692,-2.0,-2.0,0.0623754816595703,0.02530242943707192,0.06022462724216396,-0.00800062282195814,-2.0,0.005955573990982024,-2.0,-2.0,-2.0,-2.0,0.09469276913746599,0.07944658031768032,-2.0,0.09194428082384684,-2.0,0.0871914418934519,-2.0,-2.0,-2.0],"samples":[53,3,2,1,50,40,39,37,3,34,33,1,2,1,10,8,2,6,2,4,3,1,2]},{"left":[1,2,-1,4,-1,6,-1,-1,9,10,-1,12,-1,14,-1,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[8,3,-1,5,-1,7,-1,-1,16,11,-1,13,-1,15,-1,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[0,1,-2,1,-2,0,-2,-2,1,1,-2,0,-2,0,-2,-2,0,0,1,-2,-2,-2,1,-2,-2],"threshold":[-0.009731700513313776,-0.04238022977399135,-2.0,-0.0006331532309957755,-2.0,-0.07482538068809291,-2.0,-2.0,0.07846857828787751,-0.032387718184747366,-2.0,0.0062667966752595035,-2.0,0.06843462385403579,-2.0,-2.0,0.08923489909840357,0.06617465787091804,0.09416359098616402,-2.0,-2.0,-2.0,0.08421484823325624,-2.0,-2.0],"samples":[53,7,2,5,3,2,1,1,46,36,1,35,32,3,1,2,10,6,4,2,2,2,4,3,1]},{"left":[1,2,3,4,-1,-1,7,-1,-1,10,11,-1,13,-1,-1,16,-1,18,19,-1,-1,22,-1,-1,-1],"right":[24,9,6,5,-1,-1,8,-1,-1,15,12,-1,14,-1,-1,17,-1,21,20,-1,-1,23,-1,-1,-1],"feature":[1,0,0,1,-2,-2,0,-2,-2,0,1,-2,1,-2,-2,0,-2,0,1,-2,-2,1,-2,-2,-2],"threshold":[0.092297257287281,-0.0045874024148662845,-0.06953325455167189,0.02075697182883616,-2.0,-2.0,-0.01988445155575441,-2.0,-2.0,0.018761511668157704,-0.03830449322224072,-2.0,0.025804352940616844,-2.0,-2.0,0.04889403161191552,-2.0,0.0841789601627613,0.02356792476601317,-2.0,-2.0,0.08673238129002672,-2.0,-2.0,-2.0],"samples":[53,51,7,2,1,1,5,3,2,44,35,1,34,32,2,9,1,8,4,2,2,4,3,1,2]},{"left":[1,2,3,-1,-1,6,7,-1,9,-1,11,-1,-1,14,-1,-1,17,18,-1,-1,21,-1,23,-1,-1],"right":[16,5,4,-1,-1,13,8,-1,10,-1,12,-1,-1,15,-1,-1,20,19,-1,-1,22,-1,24,-1,-1],"feature":[1,0,1,-2,-2,0,0,-2,0,-2,1,-2,-2,0,-2,-2,0,1,-2,-2,0,-2,1,-2,-2],"threshold":[0.04987758255940425,-0.0362860589355953,0.009367926502464081,-2.0,-2.0,0.013029419466674921,-0.010231276191365908,-2.0,-0.00017728734839125328,-2.0,-0.06397103318635439,-2.0,-2.0,0.02278033838110234,-2.0,-2.0,0.0258132600932557,0.08004812600882216,-2.0,-2.0,0.09219436736992169,-2.0,0.08398121112973245,-2.0,-2.0],"samples":[53,43,2,1,1,41,38,3,35,2,33,1,32,3,1,2,10,4,2,2,6,2,4,3,1]},{"left":[1,2,-1,4,5,-1,-1,-1,9,10,11,-1,13,-1,-1,-1,17,18,19,-1,-1,-1,23,-1,-1],"right":[8,3,-1,7,6,-1,-1,-1,16,15,12,-1,14,-1,-1,-1,22,21,20,-1,-1,-1,24,-1,-1],"feature":[0,1,-2,1,1,-2,-2,-2,1,0,1,-2,0,-2,-2,-2,0,0,1,-2,-2,-2,1,-2,-2],"threshold":[-0.0009082800159804783,-0.07915297564575917,-2.0,0.029236894350436485,-0.016448167826484932,-2.0,-2.0,-2.0,0.012603834449940246,0.05078486383571818,-0.017673817635202108,-2.0,0.015363487851766895,-2.0,-2.0,-2.0,0.09051627730347081,0.04895378601698764,0.08684702756675006,-2.0,-2.0,-2.0,0.08007738463078928,-2.0,-2.0],"samples":[53,7,2,5,4,3,1,1,46,36,34,1,33,32,1,2,10,6,4,2,2,2,4,3,1]},{"left":[1,2,-1,-1,5,6,-1,-1,9,10,-1,12,13,-1,-1,-1,17,18,-1,-1,21,-1,-1],"right":[4,3,-1,-1,8,7,-1,-1,16,11,-1,15,14,-1,-1,-1,20,19,-1,-1,22,-1,-1],"feature":[1,0,-2,-2,0,1,-2,-2,0,1,-2,0,1,-2,-2,-2,0,1,-2,-2,1,-2,-2],"threshold":[-0.021320328549462905,-0.004131420429713668,-2.0,-2.0,-0.05900425322058415,0.01521282105008019,-2.0,-2.0,0.04587346865586542,-0.006826583659706089,-2.0,0.01370822394067117,0.06455182718588517,-2.0,-2.0,-2.0,0.09668123078927124,0.07094210625892548,-2.0,-2.0,0.08744103470328751,-2.0,-2.0],"samples":[53,3,2,1,50,2,1,1,48,40,3,37,36,32,4,1,8,4,2,2,4,3,1]},{"left":[1,2,3,-1,-1,6,7,8,-1,-1,11,12,-1,-1,15,-1,-1,-1,19,20,-1,22,-1,-1,-1],"right":[18,5,4,-1,-1,17,10,9,-1,-1,14,13,-1,-1,16,-1,-1,-1,24,21,-1,23,-1,-1,-1],"feature":[0,0,1,-2,-2,0,0,0,-2,-2,1,1,-2,-2,1,-2,-2,-2,1,1,-2,0,-2,-2,-2],"threshold":[0.07682263301649644,-0.023219603192377196,0.017090750092982655,-2.0,-2.0,0.002472368042822321,-0.0071010057005345475,-0.011887917700814016,-2.0,-2.0,0.0625770208871162,-0.05875029155925672,-2.0,-2.0,0.08103311609695225,-2.0,-2.0,-2.0,0.08200495399989223,0.07136971667670795,-2.0,0.08379174693417134,-2.0,-2.0,-2.0],"samples":[53,45,2,1,1,43,42,5,3,2,37,33,1,32,4,2,2,1,8,7,2,5,2,3,1]},{"left":[1,2,-1,-1,5,6,7,8,-1,-1,11,12,-1,-1,-1,-1,17,18,19,-1,-1,-1,-1],"right":[4,3,-1,-1,16,15,10,9,-1,-1,14,13,-1,-1,-1,-1,22,21,20,-1,-1,-1,-1],"feature":[0,1,-2,-2,0,1,0,1,-2,-2,0,1,-2,-2,-2,-2,1,0,1,-2,-2,-2,-2],"threshold":[-0.05958826240718519,0.017224621237461823,-2.0,-2.0,0.04400351432093222,0.08433543030174062,-0.009619229439597672,-0.07719406518706999,-2.0,-2.0,0.008617011660244521,0.056190652101784616,-2.0,-2.0,-2.0,-2.0,0.08119392885348864,0.08960852983026352,0.04820622763331386,-2.0,-2.0,-2.0,-2.0],"samples":[53,2,1,1,51,43,41,5,2,3,36,35,33,2,1,2,8,7,4,2,2,3,1]},{"left":[1,2,3,4,-1,-1,7,8,-1,10,-1,-1,13,-1,-1,16,17,-1,-1,20,-1,22,-1,-1,-1],"right":[24,15,6,5,-1,-1,12,9,-1,11,-1,-1,14,-1,-1,19,18,-1,-1,21,-1,23,-1,-1,-1],"feature":[1,0,0,1,-2,-2,1,0,-2,0,-2,-2,1,-2,-2,1,0,-2,-2,0,-2,1,-2,-2,-2],"threshold":[0.091182071977544,0.01417259454696286,-0.026607219590554315,0.013024224456335156,-2.0,-2.0,-0.004867205774058275,-0.010660679358499152,-2.0,-0.0033765355550231533,-2.0,-2.0,0.022691808293333737,-2.0,-2.0,0.004823873940138659,0.04286403231573777,-2.0,-2.0,0.0950952655769086,-2.0,0.08275292695692048,-2.0,-2.0,-2.0],"samples":[53,51,42,2,1,1,40,6,3,3,2,1,34,32,2,9,3,1,2,6,2,4,3,1,2]},{"left":[1,2,3,-1,-1,6,7,8,-1,-1,11,12,-1,-1,-1,16,17,-1,-1,20,-1,-1,23,-1,-1],"right":[22,5,4,-1,-1,15,10,9,-1,-1,14,13,-1,-1,-1,19,18,-1,-1,21,-1,-1,24,-1,-1],"feature":[1,0,1,-2,-2,0,0,0,-2,-2,1,1,-2,-2,-2,1,0,-2,-2,0,-2,-2,0,-2,-2],"threshold":[0.08435190250165275,-0.04280502507232774,0.019542523688404524,-2.0,-2.0,0.007451409334259904,-0.005193509280637399,-0.013235183501591143,-2.0,-2.0,0.062134021241078585,-0.027071661468423845,-2.0,-2.0,-2.0,0.05103972479753796,0.05545837168277077,-2.0,-2.0,0.08511990720747392,-2.0,-2.0,0.0909348922785611,-2.0,-2.0],"samples":[53,50,2,1,1,48,40,5,3,2,35,33,1,32,2,8,3,1,2,5,2,3,3,2,1]},{"left":[1,2,3,-1,-1,6,-1,8,9,-1,11,-1,-1,-1,15,-1,17,18,-1,-1,21,22,-1,-1,-1],"right":[14,5,4,-1,-1,7,-1,13,10,-1,12,-1,-1,-1,16,-1,20,19,-1,-1,24,23,-1,-1,-1],"feature":[1,0,1,-2,-2,0,-2,0,1,-2,0,-2,-2,-2,1,-2,0,1,-2,-2,1,0,-2,-2,-2],"threshold":[0.016399726231417222,-0.015978172705055152,-0.009219219818104364,-2.0,-2.0,-0.00436128781876502,-2.0,0.03385017589155664,-0.00854649636815985,-2.0,0.017511192102438747,-2.0,-2.0,-2.0,0.044872243185848704,-2.0,0.04390258642322632,0.08698905987997463,-2.0,-2.0,0.08762336870643378,0.09488636960968759,-2.0,-2.0,-2.0],"samples":[53,42,4,3,1,38,2,36,34,1,33,32,1,2,11,1,10,4,2,2,6,5,2,3,1]}],"limitations":"Tiny demonstration dataset. Not a flood classifier or reliable prediction. Abnormal change can also be sensor interference. Fixed safety thresholds remain independent."};
+  const aiFlag=byId('aiFlag'),aiRise8=byId('aiRise8'),aiRise15=byId('aiRise15');
+  const aiScore=byId('aiScore'),aiExplanation=byId('aiExplanation');
+  let aiSession=[];
+  function aiReset(){
+    aiSession=[];
+    aiFlag.className='ai-flag';aiFlag.textContent='ОЖИДАЕМ ДАННЫЕ';
+    aiRise8.textContent='— см';aiRise15.textContent='— см';aiScore.textContent='—';
+    aiExplanation.textContent='Подключи ESP32. После 10 секунд новых измерений модель начнёт анализ.';
+  }
+  function aiPathCorrection(n){
+    if(n<=1)return 0;
+    if(n===2)return 1;
+    return 2*(Math.log(n-1)+0.5772156649015329)-2*(n-1)/n;
+  }
+  function aiDecision(features){
+    let total=0;
+    for(const tree of aiModel.trees){
+      let node=0, depth=0;
+      while(tree.left[node]!==-1){
+        const f=tree.feature[node];
+        node=features[f]<=tree.threshold[node]?tree.left[node]:tree.right[node];
+        depth++;
+      }
+      total+=depth+aiPathCorrection(tree.samples[node]);
+    }
+    const score=-Math.pow(2,-total/(aiModel.trees.length*aiModel.average_path_length_max_samples));
+    return score-aiModel.threshold_offset;
+  }
+  function aiPrevious(t, seconds){
+    for(let j=aiSession.length-1;j>=0;j--){
+      if(aiSession[j][0]<=t-seconds*1000)return aiSession[j][1];
+    }
+    return aiSession[0][1];
+  }
+  function aiUpdate(value,now){
+    if(aiSession.length && now-aiSession[aiSession.length-1][0]>8000)aiReset();
+    aiSession.push([now,value]);
+    while(aiSession.length>2 && now-aiSession[0][0]>90000)aiSession.shift();
+    const duration=(now-aiSession[0][0])/1000;
+    if(duration<10){
+      aiFlag.className='ai-flag';aiFlag.textContent='НАКОПЛЕНИЕ ДАННЫХ';
+      aiExplanation.textContent='Получаем новые измерения: '+Math.floor(duration)+' из 10 секунд.';
+      return;
+    }
+    const r8=aiPrevious(now,8)-value;
+    const r15=aiPrevious(now,15)-value;
+    const score=aiDecision([r8,r15]);
+    aiRise8.textContent=(r8>0?'+':'')+r8.toFixed(2)+' см';
+    aiRise15.textContent=(r15>0?'+':'')+r15.toFixed(2)+' см';
+    aiScore.textContent=score.toFixed(3);
+    if(score<0){
+      aiFlag.className='ai-flag warn'; aiFlag.textContent='НЕОБЫЧНОЕ ИЗМЕНЕНИЕ';
+      aiExplanation.textContent='Модель нашла отличие от стабильных измерений. Это может быть подъём воды или помеха. Проверь датчик и уровень.';
+    }else{
+      aiFlag.className='ai-flag good';aiFlag.textContent='ОБЫЧНАЯ ДИНАМИКА';
+      aiExplanation.textContent='За последние секунды поведение похоже на обучающую запись стабильной воды. Это не означает гарантированную безопасность.';
+    }
+  }
+
+  function ingest(raw){
+    if(!Number.isFinite(raw)||raw<2||raw>400)return;
+    const now=Date.now();
+    lastRaw=raw;
+    lastReading=now;
+    const filtered=filterSample(raw,now);
+    if(filtered===null){
+      qualityEl.textContent='ПРОВЕРКА СКАЧКА';
+      qualityEl.style.color='var(--warning)';
+      qualityHint.textContent=lastQualityWarning;
+      return;
+    }
+    records.push([now,raw,filtered]);
+    aiUpdate(filtered,now);
+    if(records.length>maxRecords)records.splice(0,records.length-maxRecords);
+    showMeasurement(filtered,now);
+    showSpeed();chart();historyTable();saveHistory();
+  }
+  function processText(text){
+    buffer+=text;
+    if(buffer.length>25000)buffer=buffer.slice(-3000);
+    let end;
+    while((end=buffer.indexOf('\n'))!==-1){
+      const line=buffer.slice(0,end).trim();buffer=buffer.slice(end+1);
+      const depthMatch=line.match(/^DEPTH_CM:([0-9]+(?:\.[0-9]+)?)$/i);
+      if(depthMatch){resolveDepthReply(Number(depthMatch[1]));continue;}
+      if(/^ERR_DEPTH:/i.test(line)){
+        pendingDepth=null;
+        if(ackTimer!==null){clearTimeout(ackTimer);ackTimer=null;}
+        calibrateBtn.disabled=false;
+        calibrationMessage('ESP32 отклонил калибровку: '+line,'#f5cd79');
+        continue;
+      }
+      const found=line.match(/Distance:\s*([0-9]+(?:\.[0-9]+)?)\s*cm/i);
+      if(found){
+        if(!depthRequested){depthRequested=true;requestDeviceDepth();}
+        ingest(Number(found[1]));
+      }
+      else if(/No signal|No sensor signal/i.test(line)){
+        noSignalCount++;
+        qualityEl.textContent='НЕТ СИГНАЛА';qualityEl.style.color='var(--warning)';
+        qualityHint.textContent=noSignalCount+' пропусков';
+        setRisk('● СБОЙ ДАТЧИКА','var(--warning)');
+        note('Датчик сообщил об отсутствии сигнала. Старое расстояние не считается новым.','warning');
+      }
+    }
+  }
+  async function readLoop(){
+    const decoder=new TextDecoder();
+    try{
+      while(active && port && port.readable){
+        reader=port.readable.getReader();
+        try{
+          while(active){
+            const {value,done}=await reader.read();
+            if(done)break;
+            if(value)processText(decoder.decode(value,{stream:true}));
+          }
+        }finally{
+          try{reader.releaseLock();}catch(e){}
+          reader=null;
+        }
+        if(!active||!port.readable)break;
+      }
+    }catch(e){if(active)note('USB-данные перестали поступать: '+e.message,'warning');}
+    finally{
+      active=false;
+      if(port){try{await port.close();}catch(e){}port=null;}
+       viewState(false);
+       deviceDepthKnown=false;
+       depthRequested=false;
+       if(ackTimer!==null){clearTimeout(ackTimer);ackTimer=null;}
+       pendingDepth=null;
+       calibrateBtn.disabled=false;
+       calibrationMessage('USB отключён. Калибровка хранится в ESP32, но сейчас синхронизация не проверяется.');
+       setRisk('● ОФЛАЙН','#91aaa5');
+      qualityEl.textContent='ОФЛАЙН';qualityEl.style.color='#91aaa5';
+      saveHistory(true);
+    }
+  }
+  connect.addEventListener('click',async()=>{
+    if(!('serial' in navigator)){
+      note('Для USB нужен Chrome или Edge на компьютере и HTTPS либо localhost.','warning');return;
+    }
+    try{
+      const chosen=await navigator.serial.requestPort();
+      await chosen.open({baudRate:115200});
+       port=chosen;active=true;lastReading=0;buffer='';recent=[];
+       deviceDepthKnown=false;depthRequested=false;
+       calibrationMessage('USB подключён. Получаем калибровку с ESP32…','#f5cd79');
+      filteredValue=null;pendingSpike=null;spikeCount=0;noSignalCount=0;
+      aiReset();
+      viewState(true);
+      note('USB подключён. Ждём измерения Distance: ... cm от ESP32.','success');
+      readLoop();
+    }catch(e){
+      if(e.name==='NotFoundError')return;
+      note('Ошибка USB: '+e.message+'. Закрой Serial Monitor в Arduino IDE и повтори.','warning');
+    }
+  });
+  disconnect.addEventListener('click',async()=>{
+    active=false;
+    if(reader){try{await reader.cancel();}catch(e){}}
+    if(!reader&&port){try{await port.close();}catch(e){}port=null;viewState(false);}
+    setRisk('● ОФЛАЙН','#91aaa5');
+    qualityEl.textContent='ОФЛАЙН';
+    note('USB отключён. История сохранена. Последняя цифра на экране не является живой.');
+    saveHistory(true);
+  });
+   calibrateBtn.addEventListener('click',async()=>{
+     const val=Number(depthInput.value.replace(',','.'));
+     if(!Number.isFinite(val)||val<2||val>400){note('Укажи расстояние до дна от 2 до 400 см.','warning');return;}
+     if(!active){
+       setDepthValue(val);
+       calibrationMessage('Сохранено только на сайте. Подключи ESP32 и нажми «Сохранить в ESP32», чтобы обновить Telegram.','#f5cd79');
+       note('Telegram пока НЕ синхронизирован: подключи ESP32 и сохрани калибровку повторно.','warning');
+       return;
+     }
+     if(pendingDepth!==null)return;
+     pendingDepth=val;
+     calibrateBtn.disabled=true;
+     calibrationMessage('Отправляем '+val.toFixed(2)+' см в ESP32 и ждём подтверждения…','#f5cd79');
+     try{
+       await sendSerialCommand('SET_DEPTH:'+val.toFixed(2));
+       // The firmware confirms persisted values with DEPTH_CM:<value>.
+       // If no acknowledgement arrives, do NOT claim Telegram synced.
+       if(pendingDepth!==null){
+         ackTimer=setTimeout(()=>{
+           if(pendingDepth!==null){
+             pendingDepth=null;calibrateBtn.disabled=false;
+             calibrationMessage('Нет ответа ESP32. Возможно, прошивка старая — проверь обновление и попробуй снова.','#f5cd79');
+             note('Высота не подтверждена ESP32: Telegram может использовать старую калибровку.','warning');
+           }
+           ackTimer=null;
+         },7000);
+       }
+     }catch(e){
+       pendingDepth=null;calibrateBtn.disabled=false;
+       calibrationMessage('Не удалось отправить калибровку: '+e.message,'#f5cd79');
+       note('Синхронизация не завершилась. Проверь USB-соединение.','warning');
+     }
+   });
+  historyRange.addEventListener('change',chart);
+  exportBtn.addEventListener('click',()=>{
+    if(!records.length)return;
+    const rows=['Время;Сырой сигнал (см);После фильтра (см);Заполнение (%);Статус'];
+    const dec=n=>n.toFixed(2).replace('.',',');
+    for(const r of records){
+      const f=fillingFor(r[2]);
+      rows.push([new Date(r[0]).toLocaleString('ru-RU'),dec(r[1]),dec(r[2]),
+        f===null?'':dec(f),statusFor(r[2]).name].join(';'));
+    }
+    const csv='\ufeff'+rows.join('\r\n');
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const anchor=document.createElement('a');anchor.href=url;
+    anchor.download='DRAINIQ_history_'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.append(anchor);anchor.click();anchor.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  clearBtn.addEventListener('click',()=>{
+    if(!confirm('Очистить все сохранённые измерения DRAINIQ в этом браузере?'))return;
+    records=[];recent=[];pendingSpike=null;filteredValue=null;
+    aiReset();
+    saveHistory(true);chart();historyTable();showSpeed();
+    if(active)note('История очищена. Новые измерения продолжат поступать.','success');
+    else note('История очищена. Подключи ESP32 для новых измерений.');
+  });
+  setInterval(()=>{
+    if(active && lastReading && Date.now()-lastReading>6000){
+      setRisk('● НЕТ ОБНОВЛЕНИЯ','var(--warning)');
+      qualityEl.textContent='НЕТ НОВЫХ ДАННЫХ';qualityEl.style.color='var(--warning)';
+      note('Связь открыта, но более 6 секунд нет новых измерений. Показана последняя полученная цифра.','warning');
+    }
+    if(active && lastReading && Date.now()-lastReading<=6000)showSpeed();
+  },2000);
+  window.addEventListener('pagehide',()=>saveHistory(true));
+  loadHistory();chart();historyTable();showSpeed();
+  if(records.length)note('История восстановлена из браузера. Для живых данных подключи ESP32.');
+  if(!('serial' in navigator))note('Для подключения ESP32 открой сайт на компьютере в Chrome/Edge через HTTPS или localhost.','warning');
+})();
+</script>
+
+
+<script id="dq-cloud-script">
+(()=>{
+ 'use strict';
+ const $ = id=>document.getElementById(id);
+ const input=$('cloudChannel'),status=$('cloudStatusLine'),indicator=$('cloudIndicator');
+ let channelId='', timer=null,requestSerial=0;
+ const show=(id,v)=>{const el=$(id);if(el)el.textContent=v;};
+ function state(label,kind){indicator.className='cloud-indicator'+(kind?' '+kind:'');indicator.textContent=label;}
+ function configure(id){
+   if(!/^\d{1,12}$/.test(id)){status.textContent='Укажи только цифры Channel ID, без API-ключей.';state('ОШИБКА ID','stale');return;}
+   channelId=id;input.value=id;
+   try{localStorage.setItem('drainiq_public_cloud_channel',id);}catch(e){}
+   clearInterval(timer);poll();timer=setInterval(poll,20000);
+ }
+ async function poll(){
+   if(!channelId)return;
+   const serial=++requestSerial;
+   try{
+     const url='https://api.thingspeak.com/channels/'+encodeURIComponent(channelId)+'/feeds.json?results=80';
+     const rsp=await fetch(url,{cache:'no-store'});
+     if(!rsp.ok)throw new Error('HTTP '+rsp.status);
+     const data=await rsp.json();
+     if(serial!==requestSerial)return;
+     const entries=(data.feeds||[]).filter(x=>x.created_at);
+     if(!entries.length){state('НЕТ ЗАПИСЕЙ','stale');status.textContent='Канал найден, но ESP32 ещё не передал измерений.';return;}
+     const last=entries[entries.length-1];
+     const stamp=Date.parse(last.created_at);
+     const age=Math.max(0,Date.now()-stamp);
+     const isFresh=Number.isFinite(stamp)&&age<90000;
+     let stateNum=Number(last.field5);
+     const broken=stateNum===3||Number(last.field1)<0;
+     if(!isFresh||broken){
+       state(isFresh?'ОШИБКА ДАТЧИКА':'НЕТ СВЕЖИХ ДАННЫХ','stale');
+       status.textContent=isFresh?'ESP32 сообщил об отсутствии сигнала.':'Последняя облачная запись устарела: '+Math.round(age/1000)+' сек назад.';
+       show('cloudFill','— %');show('cloudDistance','— см');show('cloudRisk','НЕТ ДАННЫХ');show('cloudRate','—');
+     }else{
+       const dist=Number(last.field1),fill=Number(last.field2),rate=Number(last.field3);
+       if(!Number.isFinite(dist)||!Number.isFinite(fill)){throw new Error('Некорректные данные датчика');}
+       show('cloudDistance',dist.toFixed(2)+' см');show('cloudFill',fill.toFixed(1)+' %');
+       show('cloudRate',Number.isFinite(rate)?rate.toFixed(2):'—');
+       show('cloudRisk',stateNum===2?'ОПАСНО':stateNum===1?'ВНИМАНИЕ':'НОРМА');
+       state(stateNum===2?'ОПАСНО':stateNum===1?'ВНИМАНИЕ':'ОНЛАЙН',stateNum>=1?'stale':'online');
+       status.textContent='Живые данные ThingSpeak. Последняя запись '+Math.round(age/1000)+' сек назад. Калибровка ESP32: '+(last.field4||'—')+' см.';
+     }
+     show('cloudTimestamp',new Date(stamp).toLocaleString('ru-RU'));
+     const points=entries.map(x=>({v:Number(x.field2),t:Date.parse(x.created_at)})).filter(p=>Number.isFinite(p.v)&&p.v>=0&&p.v<=100);
+     const xmin=points.length?points[0].t:0, xmax=points.length?points[points.length-1].t:1;
+     const path=points.map((p,i)=>{
+       const px=xmax===xmin?350:15+670*(p.t-xmin)/(xmax-xmin);
+       const py=140-(p.v/100)*110;
+       return (i?'L':'M')+px.toFixed(1)+','+py.toFixed(1);
+     }).join(' ');
+     $('cloudLine').setAttribute('d',path);
+   }catch(error){
+     if(serial!==requestSerial)return;
+     state('ОШИБКА ОБЛАКА','stale');status.textContent='Не удалось прочитать публичный канал: '+error.message+'. Проверь, что канал Public.';
+     show('cloudFill','— %');show('cloudDistance','— см');show('cloudRisk','НЕТ ДАННЫХ');show('cloudRate','—');
+   }
+ }
+ $('cloudStart').addEventListener('click',()=>configure(input.value.trim()));
+ input.addEventListener('keydown',e=>{if(e.key==='Enter')configure(input.value.trim());});
+ $('cloudShare').addEventListener('click',async()=>{
+   const id=channelId||input.value.trim();if(!/^\d{1,12}$/.test(id)){status.textContent='Сначала укажи Channel ID.';return;}
+   const link=new URL(location.href);link.searchParams.set('channel',id);link.hash='cloud';
+   try{await navigator.clipboard.writeText(link.toString());status.textContent='Публичная ссылка скопирована! Данные сможет видеть любой, у кого она есть.';}
+   catch(e){status.textContent='Не удалось скопировать. Добавь к ссылке сайта ?channel='+id+'#cloud';}
+ });
+ const channelFromUrl=new URLSearchParams(location.search).get('channel');
+ let lastId='';try{lastId=localStorage.getItem('drainiq_public_cloud_channel')||'';}catch(e){}
+ const preset=channelFromUrl||lastId;
+ if(preset&&/^\d{1,12}$/.test(preset))configure(preset);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&channelId)poll();});
+})();
+</script>
+</body>
+</html>
